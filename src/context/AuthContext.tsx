@@ -9,6 +9,8 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
+  isProductManager: boolean;
+  isOrderManager: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +18,8 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   isAdmin: false,
+  isProductManager: false,
+  isOrderManager: false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,11 +62,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
+  const isSuperAdmin = profile?.role === 'admin' || user?.email === 'karmo2931@gmail.com';
+
   const value = {
     user,
     profile,
     loading,
-    isAdmin: profile?.role === 'admin' || user?.email === 'karmo2931@gmail.com',
+    isAdmin: isSuperAdmin,
+    isProductManager: isSuperAdmin || profile?.role === 'productManager',
+    isOrderManager: isSuperAdmin || profile?.role === 'orderManager',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

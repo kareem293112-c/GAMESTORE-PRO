@@ -12,15 +12,15 @@ import { refundOrder } from '../lib/orders';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, isProductManager, isOrderManager, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (!authLoading && !isAdmin && !isProductManager && !isOrderManager) {
       navigate('/');
       toast.error('ليس لديك صلاحية للوصول لهذه الصفحة');
     }
-  }, [authLoading, isAdmin, navigate]);
+  }, [authLoading, isAdmin, isProductManager, isOrderManager, navigate]);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -284,18 +284,20 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-slate-400">إدارة المنتجات، الطلبات، والعملاء</p>
           </div>
           <div className="flex flex-wrap gap-4">
-            <button
-              onClick={() => {
-                setCurrentProduct({
-                  name: '', description: '', price: 0, discount: 0, stock: 0,
-                  category: '', platform: '', imageUrl: '', rating: 5, featured: false
-                });
-                setIsModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all"
-            >
-              <Plus className="w-5 h-5" /> إضافة منتج جديد
-            </button>
+            {(isAdmin || isProductManager) && (
+              <button
+                onClick={() => {
+                  setCurrentProduct({
+                    name: '', description: '', price: 0, discount: 0, stock: 0,
+                    category: '', platform: '', imageUrl: '', rating: 5, featured: false
+                  });
+                  setIsModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all"
+              >
+                <Plus className="w-5 h-5" /> إضافة منتج جديد
+              </button>
+            )}
           </div>
         </header>
 
@@ -429,23 +431,25 @@ export const AdminDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                setCurrentProduct(product);
-                                setIsModalOpen(true);
-                              }}
-                              className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm({ id: product.id, type: 'product', name: product.name })}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {(isAdmin || isProductManager) && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setCurrentProduct(product);
+                                  setIsModalOpen(true);
+                                }}
+                                className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm({ id: product.id, type: 'product', name: product.name })}
+                                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -575,51 +579,52 @@ export const AdminDashboard: React.FC = () => {
                         )}
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <select 
-                            value={order.status}
-                            onChange={async (e) => {
-                              const newStatus = e.target.value;
-                              if (newStatus === 'cancelled') {
-                                if (window.confirm('إلغاء الطلب سيؤدي لاسترداد المبلغ للعميل. هل أنت متأكد؟')) {
-                                  try {
-                                    // Assuming getOrderTotal is available or order.total exists
-                                    await refundOrder(order.id, order.userId!, order.total);
-                                    await fetchOrders();
-                                    toast.success('تم إلغاء الطلب واسترداد المبلغ');
-                                  } catch (e) {
-                                    console.error(e);
-                                    toast.error('فشل إلغاء الطلب');
+                        {(isAdmin || isOrderManager) && (
+                          <div className="flex items-center gap-2">
+                            <select 
+                              value={order.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                if (newStatus === 'cancelled') {
+                                  if (window.confirm('إلغاء الطلب سيؤدي لاسترداد المبلغ للعميل. هل أنت متأكد؟')) {
+                                    try {
+                                      await refundOrder(order.id, order.userId!, order.total);
+                                      await fetchOrders();
+                                      toast.success('تم إلغاء الطلب واسترداد المبلغ');
+                                    } catch (e) {
+                                      console.error(e);
+                                      toast.error('فشل إلغاء الطلب');
+                                    }
                                   }
+                                } else if (newStatus === 'completed') {
+                                  setDeliveryModal({ 
+                                    id: order.id, 
+                                    status: 'completed', 
+                                    info: typeof order.deliveryInfo === 'string'
+                                      ? order.deliveryInfo
+                                      : order.deliveryInfo && typeof order.deliveryInfo === 'object'
+                                        ? Object.entries(order.deliveryInfo).map(([k, v]) => `${k}: ${v}`).join('\n')
+                                        : ''
+                                  });
+                                } else {
+                                  updateOrderStatus(order.id, newStatus);
                                 }
-                              } else if (newStatus === 'completed') {
-                                setDeliveryModal({ 
-                                  id: order.id, 
-                                  status: 'completed', 
-                                  info: typeof order.deliveryInfo === 'string'
-                                    ? order.deliveryInfo
-                                    : order.deliveryInfo && typeof order.deliveryInfo === 'object'
-                                      ? Object.entries(order.deliveryInfo).map(([k, v]) => `${k}: ${v}`).join('\n')
-                                      : ''
-                                });
-                              } else {
-                                updateOrderStatus(order.id, newStatus);
-                              }
-                            }}
-                            className="bg-slate-800 border border-slate-700 text-xs rounded-lg p-1 text-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none"
-                          >
-                            <option value="pending">قيد المعالجة</option>
-                            <option value="on_hold">قيد الانتظار</option>
-                            <option value="completed">تم التسليم</option>
-                            <option value="cancelled">ملغي</option>
-                          </select>
-                          <button
-                            onClick={() => setDeleteConfirm({ id: order.id, type: 'order', name: order.id })}
-                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                              }}
+                              className="bg-slate-800 border border-slate-700 text-xs rounded-lg p-1 text-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none"
+                            >
+                              <option value="pending">قيد المعالجة</option>
+                              <option value="on_hold">قيد الانتظار</option>
+                              <option value="completed">تم التسليم</option>
+                              <option value="cancelled">ملغي</option>
+                            </select>
+                            <button
+                              onClick={() => setDeleteConfirm({ id: order.id, type: 'order', name: order.id })}
+                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
