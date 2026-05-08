@@ -6,7 +6,8 @@ import { Product } from '../types';
 import { Package, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Loader2, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { refundOrder } from '../orders';
+import { refundOrder } from '../orders.ts';
+
 
 interface Order {
   id: string;
