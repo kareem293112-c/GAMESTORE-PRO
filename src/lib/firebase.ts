@@ -1,7 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth"; // إضافة هذا السطر
+import { getFirestore } from "firebase/firestore"; // إضافة هذا السطر
 
-// إعدادات Firebase تسحب القيم من Render مباشرة
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -15,5 +16,10 @@ const firebaseConfig = {
 
 // تهيئة Firebase
 const app = initializeApp(firebaseConfig);
+
+// تصدير الأدوات لاستخدامها في باقي المشروع
+export const auth = getAuth(app); // هذا ما يطلبه الخطأ
+export const db = getFirestore(app); // ستحتاجه لقاعدة البيانات
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+
 export default app;
