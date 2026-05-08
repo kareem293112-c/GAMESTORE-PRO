@@ -32,10 +32,13 @@ const StatCard: React.FC<{ icon: React.ElementType, label: string, value: number
     cyan: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     emerald: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
   };
+
   return (
     <div className={`p-6 rounded-2xl border ${colors[color]} backdrop-blur-sm`}>
       <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-xl bg-slate-900 ${colors[color]}`}><Icon className="w-6 h-6" /></div>
+        <div className={`p-3 rounded-xl bg-slate-900 ${colors[color]}`}>
+          <Icon className="w-6 h-6" />
+        </div>
         <div>
           <p className="text-sm text-slate-400 font-medium">{label}</p>
           <p className="text-2xl font-black text-white">{value}</p>
