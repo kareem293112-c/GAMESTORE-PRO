@@ -1,22 +1,19 @@
-import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 
-// استيراد ملف الإعدادات
-import firebaseConfig from './firebase-applet-config.json';
+// إعدادات Firebase تسحب القيم من Render مباشرة
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_DATABASE_URL,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
+};
 
 // تهيئة Firebase
 const app = initializeApp(firebaseConfig);
-
-// تهيئة Analytics
-const analytics = getAnalytics(app);
-
-// تهيئة Firestore
-const db = getFirestore(app);
-
-// تهيئة Firebase Authentication
-const auth = getAuth(app);
-
-// تصدير الأدوات لاستخدامها في أجزاء أخرى من الموقع
-export { app, db, auth, analytics };
+export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+export default app;
