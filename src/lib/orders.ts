@@ -1,5 +1,5 @@
 import { doc, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase'; // استيراد الـ db الذي قمت بتعريفه للتو
+import { db } from './firebase';
 
 /**
  * دالة إلغاء الطلب وإرجاع المال للمستخدم وتحديث المخزون
