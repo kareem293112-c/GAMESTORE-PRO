@@ -1,325 +1,1008 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  collection,
-  doc,
-  getDocs,
-  increment,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  deleteDoc,
-  addDoc
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product } from '../types';
-import {
-  LayoutDashboard,
-  Loader2,
-  Package,
-  Plus,
-  Search,
-  Trash2,
-  Wallet,
-  X,
-  Users,
-  Truck,
-  XCircle,
-  CheckCircle,
-  Clock,
-  Send,
-  Gamepad2,
-  Gift,
-  AlertTriangle,
-  RefreshCcw,
-  ImageOff
-} from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter } from 'lucide-react';
+import { formatPrice } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-
-// --- الأقسام الثابتة ---
-const CATEGORIES = [
-  { id: 'all', name: 'الكل', icon: <Package size={16} /> },
-  { id: 'gifts', name: 'قسم الهدايا', icon: <Gift size={16} /> },
-  { id: 'steam-accounts', name: 'حسابات ستيم', icon: <Users size={16} /> },
-  { id: 'steam-codes', name: 'أكواد ستيم', icon: <Gamepad2 size={16} /> },
-  { id: 'problem-accounts', name: 'حسابات مشكلة', icon: <AlertTriangle size={16} /> },
-];
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const AdminDashboard: React.FC = () => {
-  const { loading: authLoading } = useAuth();
-  
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'users'>('products');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'order', name?: string } | null>(null);
+  const [walletModal, setWalletModal] = useState<{ userId: string, email: string, currentBalance: number, amount: string } | null>(null);
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'processing' | 'delivered' | 'cancelled'>('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  // Filter States
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
 
-  // بيانات المنتج الجديد
-  const [newProduct, setNewProduct] = useState({
-    name: '', price: '', stock: '', category: 'steam-accounts', imageUrl: '', description: '', discount: '0'
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
+    const matchesPlatform = platformFilter === '' || product.platform === platformFilter;
+    return matchesCategory && matchesPlatform;
   });
 
-  // التحكم في النوافذ (Modals)
-  const [modals, setModals] = useState<{
-    addOrderInfo: any | null;
-    editBalance: { user: any, amount: string } | null;
-    addProduct: boolean;
-  }>({ addOrderInfo: null, editBalance: null, addProduct: false });
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen]);
 
-  const usersMap = useMemo(() => {
-    const map = new Map();
-    usersList.forEach(u => map.set(u.uid, u));
-    return map;
-  }, [usersList]);
+  const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({
+    name: '',
+    description: '',
+    price: 0,
+    discount: 0,
+    stock: 0,
+    category: '',
+    platform: '',
+    imageUrl: '',
+    rating: 5,
+    featured: false
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchProducts = async () => {
     try {
-      const [pSnap, oSnap, uSnap] = await Promise.all([
-        getDocs(query(collection(db, 'products'), orderBy('createdAt', 'desc'))),
-        getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'))),
-        getDocs(collection(db, 'users')),
-      ]);
-      setProducts(pSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
-      setOrders(oSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setUsersList(uSnap.docs.map(d => ({ uid: d.id, ...d.data() })));
-    } catch { toast.error("خطأ في الاتصال بقاعدة البيانات"); } finally { setLoading(false); }
+      const querySnapshot = await getDocs(collection(db, 'products'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
+      setProducts(data);
+      
+      const uniqueCategories = Array.from(new Set(data.map(p => p.category))).filter(Boolean);
+      const uniquePlatforms = Array.from(new Set(data.map(p => p.platform))).filter(Boolean);
+      setCategories(uniqueCategories);
+      setPlatforms(uniquePlatforms);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'products');
+      toast.error('حدث خطأ أثناء تحميل المنتجات');
+    }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchOrders = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'orders'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setOrders(data);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'orders');
+      console.error(error);
+    }
+  };
 
-  // --- العمليات ---
+  const fetchUsers = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const data = querySnapshot.docs.map(doc => ({ 
+        uid: doc.id, 
+        ...doc.data(),
+        balance: doc.data().balance || 0,
+        role: doc.data().role || 'customer'
+      }));
+      setUsersList(data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      // Don't throw to avoid breaking Promise.all in init
+    }
+  };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const updateWalletBalance = async (userId: string, newBalance: number) => {
+    if (isNaN(newBalance)) {
+      toast.error('الرصيد المدخل غير صحيح');
+      return;
+    }
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, { 
+        balance: Number(newBalance),
+        updatedAt: serverTimestamp()
+      });
+      toast.success('تم تحديث الرصيد بنجاح');
+      setWalletModal(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Wallet update error:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
+      toast.error('حدث خطأ أثناء تحديث الرصيد: ' + (error.message || 'خطأ غير معروف'));
+    }
+  };
+
+  const [editingDelivery, setEditingDelivery] = useState<{ id: string, info: string } | null>(null);
+  const [deliveryModal, setDeliveryModal] = useState<{ id: string, status: string, info: string } | null>(null);
+
+  const updateOrderStatus = async (orderId: string, status: string, deliveryInfo?: string) => {
+    try {
+      const updateData: any = { status, updatedAt: new Date().toISOString() };
+      if (deliveryInfo !== undefined) {
+        updateData.deliveryInfo = deliveryInfo;
+      }
+      await updateDoc(doc(db, 'orders', orderId), { ...updateData, updatedAt: serverTimestamp() });
+      toast.success('تم تحديث الطلب');
+      fetchOrders();
+      setEditingDelivery(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+      toast.error('فشل تحديث الطلب');
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchProducts(), fetchOrders(), fetchUsers()]);
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     try {
-      await addDoc(collection(db, 'products'), {
-        ...newProduct,
-        price: Number(newProduct.price),
-        stock: Number(newProduct.stock),
-        isActive: true,
-        createdAt: serverTimestamp(),
-      });
-      toast.success("تم إضافة المنتج");
-      setModals({ ...modals, addProduct: false });
-      setNewProduct({ name: '', price: '', stock: '', category: 'steam-accounts', imageUrl: '', description: '', discount: '0' });
-      fetchData();
-    } catch { toast.error("فشل إضافة المنتج"); } finally { setSaving(false); }
+      if (currentProduct.id) {
+        const { id, ...data } = currentProduct;
+        try {
+          await updateDoc(doc(db, 'products', id as string), data);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `products/${id}`);
+        }
+        toast.success('تم تحديث المنتج');
+      } else {
+        try {
+          await addDoc(collection(db, 'products'), {
+            ...currentProduct,
+            createdAt: new Date().toISOString()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, 'products');
+        }
+        toast.success('تم إضافة المنتج');
+      }
+      setIsModalOpen(false);
+      fetchProducts();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء الحفظ');
+    }
   };
 
-  const handleUpdateBalance = async (type: 'add' | 'subtract') => {
-    if (!modals.editBalance || !modals.editBalance.amount) return;
-    const amount = Number(modals.editBalance.amount);
-    const finalAmount = type === 'subtract' ? -amount : amount;
-    setSaving(true);
+  const handleDelete = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'users', modals.editBalance.user.uid), { balance: increment(finalAmount) });
-      toast.success(type === 'add' ? "تمت الإضافة" : "تم السحب");
-      setModals({ ...modals, editBalance: null });
-      fetchData();
-    } catch { toast.error("خطأ في التعديل"); } finally { setSaving(false); }
+      await deleteDoc(doc(db, 'products', id));
+      toast.success('تم الحذف بنجاح');
+      fetchProducts();
+      setDeleteConfirm(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+      toast.error('خطأ في الحذف');
+    }
   };
 
-  const handleCancelAndRefund = async (order: any) => {
-    if (!window.confirm("إلغاء وإرجاع المال للعميل؟")) return;
-    setSaving(true);
+  const handleDeleteOrder = async (id: string) => {
     try {
-      const amount = Number(order.totalPrice || order.amount || 0);
-      await Promise.all([
-        updateDoc(doc(db, 'users', order.userId), { balance: increment(amount) }),
-        updateDoc(doc(db, 'orders', order.id), { status: 'cancelled', updatedAt: serverTimestamp() })
-      ]);
-      toast.success("تم الإلغاء واسترجاع المبلغ");
-      fetchData();
-    } catch { toast.error("فشل الإلغاء"); } finally { setSaving(false); }
+      await deleteDoc(doc(db, 'orders', id));
+      toast.success('تم حذف الطلب بنجاح');
+      fetchOrders();
+      setDeleteConfirm(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `orders/${id}`);
+      toast.error('حدث خطأ أثناء حذف الطلب');
+    }
   };
 
-  const handleDeliver = async (info: string) => {
-    if (!modals.addOrderInfo || !info.trim()) return toast.error("أدخل بيانات الحساب");
-    setSaving(true);
-    try {
-      await updateDoc(doc(db, 'orders', modals.addOrderInfo.id), {
-        status: 'delivered', deliveryInfo: info, deliveredAt: serverTimestamp()
-      });
-      toast.success("تم التسليم");
-      setModals({ ...modals, addOrderInfo: null });
-      fetchData();
-    } catch { toast.error("خطأ في التسليم"); } finally { setSaving(false); }
-  };
-
-  if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6 text-right text-slate-100 font-sans" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="flex justify-between items-center bg-slate-900/50 p-6 rounded-[2rem] border border-slate-800 backdrop-blur-md">
-          <h1 className="text-xl font-black flex items-center gap-3"><LayoutDashboard className="text-indigo-500" /> لوحة الإدارة</h1>
-          <button onClick={() => setModals({...modals, addProduct: true})} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2 transition-all">
-            <Plus size={18} /> منتج جديد
-          </button>
+    <div className="min-h-screen bg-[#0f172a] p-4 sm:p-8" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black text-white flex items-center gap-2">
+              <LayoutDashboard className="w-8 h-8 text-indigo-500" /> لوحة الإدارة
+            </h1>
+            <p className="text-slate-400">إدارة المنتجات، الطلبات، والعملاء</p>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => {
+                setCurrentProduct({
+                  name: '', description: '', price: 0, discount: 0, stock: 0,
+                  category: '', platform: '', imageUrl: '', rating: 5, featured: false
+                });
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all"
+            >
+              <Plus className="w-5 h-5" /> إضافة منتج جديد
+            </button>
+          </div>
         </header>
 
-        {/* Tabs */}
-        <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-fit">
-          {([{id:'products', n:'المخزون'}, {id:'orders', n:'الطلبات'}, {id:'users', n:'المستخدمين'}]).map((t) => (
-            <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`px-8 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === t.id ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>
-              {t.n}
-            </button>
-          ))}
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <StatCard icon={ShoppingBag} label="المنتجات" value={products.length} color="indigo" />
+          <StatCard icon={Package} label="إجمالي الطلبات" value={orders.length} color="cyan" />
+          <StatCard icon={Users} label="العملاء" value={new Set(orders.map(o => o.userId)).size} color="emerald" />
         </div>
 
-        <main className="bg-slate-900/20 rounded-[2.5rem] border border-slate-800/50 min-h-[500px] backdrop-blur-sm">
-          
-          {/* View: Orders */}
-          {activeTab === 'orders' && (
-            <div className="p-8 space-y-6">
-              <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input type="text" placeholder="بحث برقم الطلب..." className="bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-3 outline-none focus:border-indigo-500 max-w-sm" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                <div className="flex gap-1.5 bg-slate-800/40 p-1 rounded-xl">
-                  {([{id:'all', n:'الكل'}, {id:'processing', n:'قيد المعالجة'}, {id:'delivered', n:'تم التسليم'}, {id:'cancelled', n:'ملغي'}] as const).map(s => (
-                    <button key={s.id} onClick={() => setOrderStatusFilter(s.id)} className={`px-4 py-2 rounded-lg text-[10px] font-black ${orderStatusFilter === s.id ? 'bg-indigo-600' : ''}`}>{s.n}</button>
+        {/* Tab Switcher */}
+        <div className="flex bg-slate-900/50 p-1 rounded-2xl border border-slate-800 w-fit">
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+              activeTab === 'products' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            المنتجات
+          </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+              activeTab === 'orders' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            الطلبات
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+              activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            العملاء
+          </button>
+        </div>
+
+        {/* Content */}
+        {activeTab === 'products' ? (
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Filter className="w-4 h-4" />
+                <span className="text-sm font-bold">تصفية حسب:</span>
+              </div>
+              
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">جميع التصنيفات</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+
+              <select
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">جميع المنصات</option>
+                {platforms.map(plat => (
+                  <option key={plat} value={plat}>{plat}</option>
+                ))}
+              </select>
+
+              {(categoryFilter || platformFilter) && (
+                <button
+                  onClick={() => {
+                    setCategoryFilter('');
+                    setPlatformFilter('');
+                  }}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-bold"
+                >
+                  إعادة تعيين
+                </button>
+              )}
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead className="bg-slate-800/50 text-slate-400 text-sm">
+                  <tr>
+                    <th className="p-4 mr-2">المنتج</th>
+                    <th className="p-4">التصنيف</th>
+                    <th className="p-4">السعر</th>
+                    <th className="p-4">المخزون</th>
+                    <th className="p-4">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {loading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={5} className="p-8 h-20 bg-slate-800/10"></td>
+                      </tr>
+                    ))
+                  ) : filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <tr key={product.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="" />
+                            <div>
+                              <p className="font-bold text-slate-200">{product.name}</p>
+                              <p className="text-xs text-slate-500">{product.platform}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-sm text-slate-400">{product.category}</td>
+                        <td className="p-4">
+                          <p className="font-bold text-indigo-400">{formatPrice(product.price)}</p>
+                          {product.discount > 0 && <p className="text-[10px] text-red-400">-{product.discount}% خصم</p>}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded-md text-xs font-bold ${product.stock > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                            {product.stock} متبقي
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setCurrentProduct(product);
+                                setIsModalOpen(true);
+                              }}
+                              className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm({ id: product.id, type: 'product', name: product.name })}
+                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-slate-500 font-bold">
+                        {products.length === 0 ? 'لا يوجد منتجات حالياً' : 'لم يتم العثور على منتجات تطابق البحث'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'orders' ? (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead className="bg-slate-800/50 text-slate-400 text-sm">
+                  <tr>
+                    <th className="p-4 mr-2">طلب ID</th>
+                    <th className="p-4">العميل</th>
+                    <th className="p-4">المبلغ</th>
+                    <th className="p-4">الحالة</th>
+                    <th className="p-4">معلومات التسليم</th>
+                    <th className="p-4">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-12 text-center text-slate-500 font-bold">لا يوجد طلبات حالياً</td>
+                    </tr>
+                  ) : orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-4 text-xs font-mono text-slate-400">{order.id}</td>
+                      <td className="p-4">
+                        <p className="font-bold text-slate-200">{order.customerName}</p>
+                        <p className="text-xs text-slate-500">{order.customerEmail}</p>
+                      </td>
+                      <td className="p-4 font-black text-white">{formatPrice(order.total)}</td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                          order.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                          order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                          'bg-amber-500/20 text-amber-400'
+                        }`}>
+                          {order.status === 'completed' ? 'تم التسليم' : order.status === 'cancelled' ? 'ملغي' : 'قيد المعالجة'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {editingDelivery?.id === order.id ? (
+                          <div className="flex flex-col gap-2 min-w-[200px]">
+                            <textarea
+                              value={editingDelivery.info}
+                              onChange={(e) => setEditingDelivery({ ...editingDelivery, info: e.target.value })}
+                              placeholder="أدخل معلومات التسليم هنا..."
+                              className="bg-slate-800 border border-slate-700 text-xs rounded-lg p-2 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 resize-none h-20"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => updateOrderStatus(order.id, order.status, editingDelivery.info)}
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold py-1 rounded-md transition-colors"
+                              >
+                                حفظ المعلومات
+                              </button>
+                              <button
+                                onClick={() => setEditingDelivery(null)}
+                                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold py-1 rounded-md transition-colors"
+                              >
+                                إلغاء
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="max-w-[200px]">
+                            {order.deliveryInfo ? (
+                              <div className="group relative">
+                                <p className="text-xs text-slate-400 truncate">
+                                  {typeof order.deliveryInfo === 'string' 
+                                    ? order.deliveryInfo 
+                                    : order.deliveryInfo && typeof order.deliveryInfo === 'object'
+                                      ? JSON.stringify(order.deliveryInfo)
+                                      : ''}
+                                </p>
+                                <button
+                                  onClick={() => setEditingDelivery({ 
+                                    id: order.id, 
+                                    info: typeof order.deliveryInfo === 'string' 
+                                      ? order.deliveryInfo 
+                                      : order.deliveryInfo && typeof order.deliveryInfo === 'object'
+                                        ? Object.entries(order.deliveryInfo).map(([k, v]) => `${k}: ${v}`).join('\n')
+                                        : '' 
+                                  })}
+                                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold mt-1"
+                                >
+                                  تعديل
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingDelivery({ id: order.id, info: '' })}
+                                className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold"
+                              >
+                                <Plus className="w-3 h-3" /> إضافة معلومات
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <select 
+                            value={order.status}
+                            onChange={(e) => {
+                              if (e.target.value === 'completed') {
+                                setDeliveryModal({ 
+                                  id: order.id, 
+                                  status: 'completed', 
+                                  info: typeof order.deliveryInfo === 'string' 
+                                    ? order.deliveryInfo 
+                                    : order.deliveryInfo && typeof order.deliveryInfo === 'object'
+                                      ? Object.entries(order.deliveryInfo).map(([k, v]) => `${k}: ${v}`).join('\n')
+                                      : '' 
+                                });
+                              } else {
+                                updateOrderStatus(order.id, e.target.value);
+                              }
+                            }}
+                            className="bg-slate-800 border border-slate-700 text-xs rounded-lg p-1 text-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none"
+                          >
+                            <option value="pending">قيد المعالجة</option>
+                            <option value="completed">تم التسليم</option>
+                            <option value="cancelled">ملغي</option>
+                          </select>
+                          <button
+                            onClick={() => setDeleteConfirm({ id: order.id, type: 'order', name: order.id })}
+                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-              <div className="grid gap-4">
-                {orders.filter(o => (orderStatusFilter === 'all' || o.status === orderStatusFilter) && o.id.includes(searchQuery)).map(order => (
-                  <div key={order.id} className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] text-slate-600 block uppercase">#{order.id.slice(0,10)}</span>
-                      <h3 className="font-bold text-white">{order.productName}</h3>
-                      <p className="text-indigo-400 font-black text-sm">${order.totalPrice || order.amount}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black ${order.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>{order.status}</span>
-                      {order.status === 'processing' && (
-                        <>
-                          <button onClick={() => setModals({...modals, addOrderInfo: order})} className="bg-emerald-600 px-4 py-2 rounded-xl text-xs font-black">تم التسليم</button>
-                          <button onClick={() => handleCancelAndRefund(order)} className="bg-red-600/10 text-red-500 px-4 py-2 rounded-xl text-xs font-black">إلغاء</button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                </tbody>
+              </table>
             </div>
-          )}
-
-          {/* View: Products */}
-          {activeTab === 'products' && (
-            <div className="p-8 space-y-6">
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(c => (
-                  <button key={c.id} onClick={() => setCategoryFilter(c.id)} className={`px-5 py-2 rounded-xl border text-xs font-black ${categoryFilter === c.id ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800/40 border-slate-700 text-slate-500'}`}>{c.name}</button>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {products.filter(p => categoryFilter === 'all' || p.category === categoryFilter).map(p => (
-                  <div key={p.id} className="bg-slate-900/60 p-4 rounded-3xl border border-slate-800 flex items-center gap-4">
-                    <img src={p.imageUrl} className="w-16 h-16 rounded-xl object-cover" alt="" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-white text-sm">{p.name}</h4>
-                      <p className="text-indigo-400 font-black">${p.price}</p>
-                    </div>
-                    <button onClick={() => {if(window.confirm('حذف؟')) deleteDoc(doc(db, 'products', p.id)).then(fetchData)}} className="text-red-500/30 hover:text-red-500"><Trash2 size={18}/></button>
-                  </div>
-                ))}
-              </div>
+          </div>
+        ) : (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead className="bg-slate-800/50 text-slate-400 text-sm">
+                  <tr>
+                    <th className="p-4 mr-2">العميل</th>
+                    <th className="p-4">البريد الإلكتروني</th>
+                    <th className="p-4">الرتبة</th>
+                    <th className="p-4">الرصيد</th>
+                    <th className="p-4">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {usersList.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-slate-500 font-bold">لا يوجد مستخدمين حالياً</td>
+                    </tr>
+                  ) : usersList.map((userItem) => (
+                    <tr key={userItem.uid} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-4 font-bold text-slate-200">{userItem.displayName || 'بدون اسم'}</td>
+                      <td className="p-4 text-xs text-slate-400 font-mono">{userItem.email}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          userItem.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700 text-slate-300'
+                        }`}>
+                          {userItem.role}
+                        </span>
+                      </td>
+                      <td className="p-4 font-black text-emerald-400">
+                        {formatPrice(userItem.balance || 0)}
+                      </td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => setWalletModal({ 
+                            userId: userItem.uid, 
+                            email: userItem.email, 
+                            currentBalance: userItem.balance || 0,
+                            amount: (userItem.balance || 0).toString()
+                          })}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 text-[10px] font-black rounded-lg transition-all"
+                        >
+                          <Save className="w-3 h-3" /> تعديل الرصيد
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-
-          {/* View: Users */}
-          {activeTab === 'users' && (
-            <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {usersList.map(u => (
-                <div key={u.uid} className="bg-slate-900/60 p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-white text-sm">{u.displayName || 'بدون اسم'}</h3>
-                    <p className="text-emerald-400 font-black text-xs">${u.balance || 0}</p>
-                  </div>
-                  <button onClick={() => setModals({...modals, editBalance: { user: u, amount: '' }})} className="bg-indigo-600/10 text-indigo-400 px-4 py-2 rounded-xl text-[10px] font-black transition-all hover:bg-indigo-600 hover:text-white">تعديل الرصيد</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </main>
+          </div>
+        )}
       </div>
 
-      {/* --- النوافذ (Modals) --- */}
-
-      {/* نافذة إضافة منتج */}
+      {/* Modal */}
       <AnimatePresence>
-        {modals.addProduct && (
-          <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <motion.form onSubmit={handleAddProduct} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] max-w-2xl w-full">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-xl font-black text-white">إضافة منتج جديد</h2>
-                <button type="button" onClick={() => setModals({...modals, addProduct: false})} className="bg-slate-800 p-2 rounded-full"><X/></button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input required placeholder="اسم المنتج" className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-indigo-500" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                <select className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-indigo-500" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})}>
-                  {CATEGORIES.filter(c => c.id !== 'all').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <input required placeholder="رابط الصورة" className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-indigo-500" value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} />
-                <input required type="number" placeholder="السعر" className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-indigo-500" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
-                <input required type="number" placeholder="المخزون" className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-indigo-500" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} />
-              </div>
-              <button disabled={saving} className="w-full mt-6 bg-indigo-600 py-4 rounded-xl font-black text-lg transition-all">{saving ? 'جاري الحفظ...' : 'حفظ المنتج'}</button>
-            </motion.form>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-[#0f172a]/95 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden"
+              dir="rtl"
+            >
+              <form onSubmit={handleSave}>
+                <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white">
+                    {currentProduct.id ? 'تعديل منتج' : 'إضافة منتج جديد'}
+                  </h3>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                  <FormField label="اسم المنتج" required>
+                    <input
+                      type="text"
+                      value={currentProduct.name}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
+                      className="admin-input"
+                      required
+                    />
+                  </FormField>
+                  <FormField label="التصنيف" required>
+                    <select
+                      value={currentProduct.category}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })}
+                      className="admin-input"
+                      required
+                    >
+                      <option value="">اختر التصنيف</option>
+                      <option value="قسم الهدايا">قسم الهدايا</option>
+                      <option value="حسابات ستيم">حسابات ستيم</option>
+                      <option value="أكواد ستيم">أكواد ستيم</option>
+                      <option value="حسابات مشكلة">حسابات مشكلة</option>
+                    </select>
+                  </FormField>
+                  <FormField label="المنصة" placeholder="مثل Steam, PS5">
+                    <input
+                      type="text"
+                      value={currentProduct.platform}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, platform: e.target.value })}
+                      className="admin-input"
+                    />
+                  </FormField>
+                  <FormField label="السعر (ليرة)" required>
+                    <input
+                      type="number"
+                      value={currentProduct.price}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })}
+                      className="admin-input"
+                      required
+                    />
+                  </FormField>
+                  <FormField label="الخصم (%)">
+                    <input
+                      type="number"
+                      value={currentProduct.discount}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, discount: Number(e.target.value) })}
+                      className="admin-input"
+                    />
+                  </FormField>
+                  <FormField label="المخزون" required>
+                    <input
+                      type="number"
+                      value={currentProduct.stock}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, stock: Number(e.target.value) })}
+                      className="admin-input"
+                      required
+                    />
+                  </FormField>
+                  <div className="sm:col-span-2">
+                    <FormField label="رابط الصورة" required>
+                      <input
+                        type="url"
+                        value={currentProduct.imageUrl}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, imageUrl: e.target.value })}
+                        className="admin-input text-left"
+                        dir="ltr"
+                        required
+                      />
+                    </FormField>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <FormField label="الوصف">
+                      <textarea
+                        value={currentProduct.description}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
+                        className="admin-input resize-none h-24"
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="sm:col-span-2 border-t border-slate-800 pt-6 mt-2">
+                    <h4 className="text-white font-bold mb-4">معلومات إضافية</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField label="تاريخ الإصدار">
+                        <input
+                          type="date"
+                          value={currentProduct.releaseDate}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, releaseDate: e.target.value })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="المطور">
+                        <input
+                          type="text"
+                          value={currentProduct.developer}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, developer: e.target.value })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="اللغات (مفصولة بفاصلة)">
+                        <input
+                          type="text"
+                          value={currentProduct.languages?.join(', ')}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, languages: e.target.value.split(',').map(s => s.trim()) })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2 border-t border-slate-800 pt-6 mt-2">
+                    <h4 className="text-white font-bold mb-4">متطلبات التشغيل</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField label="نظام التشغيل">
+                        <input
+                          type="text"
+                          value={currentProduct.requirements?.os}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, requirements: { ...currentProduct.requirements, os: e.target.value } })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="المعالج">
+                        <input
+                          type="text"
+                          value={currentProduct.requirements?.processor}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, requirements: { ...currentProduct.requirements, processor: e.target.value } })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="الذاكرة">
+                        <input
+                          type="text"
+                          value={currentProduct.requirements?.memory}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, requirements: { ...currentProduct.requirements, memory: e.target.value } })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="بطاقة العرض">
+                        <input
+                          type="text"
+                          value={currentProduct.requirements?.graphics}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, requirements: { ...currentProduct.requirements, graphics: e.target.value } })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                      <FormField label="التخزين">
+                        <input
+                          type="text"
+                          value={currentProduct.requirements?.storage}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, requirements: { ...currentProduct.requirements, storage: e.target.value } })}
+                          className="admin-input"
+                        />
+                      </FormField>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-6 py-2 text-slate-400 hover:text-white font-bold"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-8 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20"
+                  >
+                    <Save className="w-4 h-4" /> حفظ المنتج
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* نافذة التسليم */}
+      {/* Delete Confirmation Modal */}
       <AnimatePresence>
-        {modals.addOrderInfo && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 text-center">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] max-w-lg w-full">
-              <h2 className="text-xl font-black text-white mb-6">إرسال بيانات التسليم للعميل</h2>
-              <textarea id="del_info" placeholder="اكتب بيانات الحساب هنا..." className="w-full bg-slate-800 border border-slate-700 rounded-3xl p-5 min-h-[180px] mb-6 text-slate-100 outline-none focus:border-indigo-500 resize-none"></textarea>
-              <div className="flex gap-4">
-                <button onClick={() => {
-                  const val = (document.getElementById('del_info') as HTMLTextAreaElement).value;
-                  handleDeliver(val);
-                }} className="flex-1 bg-indigo-600 py-4 rounded-2xl font-black">إرسال للعميل</button>
-                <button onClick={() => setModals({...modals, addOrderInfo: null})} className="flex-1 bg-slate-800 py-4 rounded-2xl font-black">إلغاء</button>
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirm(null)}
+              className="absolute inset-0 bg-[#0f172a]/90 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 text-center space-y-6"
+            >
+              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white">
+                  هل أنت متأكد من حذف هذا {deleteConfirm.type === 'product' ? 'المنتج' : 'الطلب'}؟
+                </h3>
+                {deleteConfirm.name && (
+                  <p className="text-indigo-400 font-bold text-sm bg-indigo-500/10 py-1 px-3 rounded-full inline-block">
+                    {deleteConfirm.name}
+                  </p>
+                )}
+                <p className="text-slate-400">لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-6 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => {
+                    if (deleteConfirm.type === 'product') {
+                      handleDelete(deleteConfirm.id);
+                    } else {
+                      handleDeleteOrder(deleteConfirm.id);
+                    }
+                  }}
+                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-600/20"
+                >
+                  حذف {deleteConfirm.type === 'product' ? 'المنتج' : 'الطلب'}
+                </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* نافذة تعديل الرصيد */}
+      {/* Delivery Info Modal */}
       <AnimatePresence>
-        {modals.editBalance && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 text-center">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] max-w-sm w-full">
-              <h2 className="text-xl font-black text-white mb-6">تعديل الرصيد</h2>
-              <div className="bg-slate-800 p-4 rounded-2xl mb-6">
-                 <span className="text-slate-500 text-xs block">الرصيد الحالي</span>
-                 <span className="text-2xl font-black text-emerald-400">${modals.editBalance.user.balance || 0}</span>
+        {deliveryModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeliveryModal(null)}
+              className="absolute inset-0 bg-[#0f172a]/95 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-6"
+              dir="rtl"
+            >
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-white">تسليم الطلب</h3>
+                  <p className="text-xs text-slate-400">رقم الطلب: <span className="font-mono">{deliveryModal.id}</span></p>
+                </div>
+                <button onClick={() => setDeliveryModal(null)} className="text-slate-400 hover:text-white transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <input type="number" className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center text-2xl font-black outline-none" value={modals.editBalance.amount} onChange={e => setModals({...modals, editBalance: {...modals.editBalance!, amount: e.target.value}})} />
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => handleUpdateBalance('add')} className="bg-emerald-600 py-4 rounded-2xl font-black">إضافة</button>
-                <button onClick={() => handleUpdateBalance('subtract')} className="bg-red-600 py-4 rounded-2xl font-black">سحب</button>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-300">معلومات الحساب والمنتج</label>
+                  <textarea
+                    value={deliveryModal.info}
+                    onChange={(e) => setDeliveryModal({ ...deliveryModal, info: e.target.value })}
+                    placeholder="أدخل البريد الإلكتروني، كلمة السر، وأي تعليمات إضافية للعميل..."
+                    className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 min-h-[150px] resize-none leading-relaxed"
+                    autoFocus
+                  />
+                  <p className="text-[10px] text-slate-500">هذه المعلومات ستظهر للعميل فوراً بعد الضغط على "تم الإرسال".</p>
+                </div>
               </div>
-              <button onClick={() => setModals({...modals, editBalance: null})} className="mt-4 text-slate-500 font-bold">إلغاء</button>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setDeliveryModal(null)}
+                  className="flex-1 px-6 py-3 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-700 transition-all"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => {
+                    updateOrderStatus(deliveryModal.id, 'completed', deliveryModal.info);
+                    setDeliveryModal(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" /> تم الإرسال والتسليم
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* Wallet Modal */}
+      <AnimatePresence>
+        {walletModal && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setWalletModal(null)}
+              className="absolute inset-0 bg-[#0f172a]/95 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 space-y-6"
+              dir="rtl"
+            >
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white">تعديل رصيد المحفظة</h3>
+                <p className="text-xs text-slate-400">{walletModal.email}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400">الرصيد الحالي: {formatPrice(walletModal.currentBalance)}</label>
+                  <input
+                    type="number"
+                    value={walletModal.amount}
+                    onChange={(e) => setWalletModal({ ...walletModal, amount: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="أدخل الرصيد الجديد..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setWalletModal(null)}
+                  className="flex-1 py-3 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-700 transition-all text-sm"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => updateWalletBalance(walletModal.userId, Number(walletModal.amount))}
+                  className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-500 transition-all text-sm shadow-lg shadow-emerald-600/20"
+                >
+                  حفظ الرصيد
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        .admin-input {
+          width: 100%;
+          background: #1e293b;
+          border: 1px solid #334155;
+          border-radius: 0.75rem;
+          padding: 0.75rem 1rem;
+          color: white;
+          font-size: 0.875rem;
+          outline: none;
+          transition: all 0.2s;
+        }
+        .admin-input:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+      `}</style>
     </div>
   );
 };
+
+const StatCard = ({ icon: Icon, label, value, color }: any) => (
+  <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl relative overflow-hidden group">
+    <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-500/5 rounded-full blur-3xl`} />
+    <div className="flex items-center gap-4">
+      <div className={`p-3 rounded-2xl bg-${color}-500/10 text-${color}-500 group-hover:scale-110 transition-transform`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-black text-white">{value}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const FormField = ({ label, children, required, placeholder }: any) => (
+  <div className="space-y-1.5">
+    <label className="text-sm font-bold text-slate-400 flex items-center gap-1">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    {children}
+  </div>
+);
