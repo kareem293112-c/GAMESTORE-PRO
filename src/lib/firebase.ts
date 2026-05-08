@@ -1,8 +1,10 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import firebaseConfig from './firebase-applet-config.json'; // استيراد ملف الإعدادات
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+
+// استيراد ملف الإعدادات
+import firebaseConfig from './firebase-applet-config.json';
 
 // تهيئة Firebase
 const app = initializeApp(firebaseConfig);
