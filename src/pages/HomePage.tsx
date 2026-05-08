@@ -9,7 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ActivityFeed } from '../components/layout/ActivityFeed';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Gamepad2, Gift, MousePointer2, Percent, TrendingUp, Search, X, User } from 'lucide-react';
+import { Sparkles, Gamepad2, Gift, MousePointer2, Percent, TrendingUp, Search, X, User, Plus, ShieldCheck, Wallet } from 'lucide-react';
 import { Footer } from '../components/layout/Footer';
 import { WhatsAppButton } from '../components/ui/WhatsAppButton';
 import Masonry from 'react-masonry-css';
@@ -226,10 +226,10 @@ export const HomePage: React.FC = () => {
       {/* Feature Cards */}
       <section className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {[
-          { icon: Gamepad2, label: t('features.instant'), desc: t('features.instantDesc') },
-          { icon: Gift, label: t('features.bestPrice'), desc: t('features.bestPriceDesc') },
-          { icon: Percent, label: t('features.secure'), desc: t('features.secureDesc') },
-          { icon: TrendingUp, label: t('features.support'), desc: t('features.supportDesc') }
+          { icon: User, label: t('features.membership'), desc: t('features.membershipDesc') },
+          { icon: Plus, label: t('features.listing'), desc: t('features.listingDesc') },
+          { icon: ShieldCheck, label: t('features.secureSell'), desc: t('features.secureSellDesc') },
+          { icon: Wallet, label: t('features.withdraw'), desc: t('features.withdrawDesc') }
         ].map((f, i) => (
           <div key={i} className="group p-6 bg-slate-900/50 border border-slate-800 rounded-3xl hover:border-indigo-500/30 transition-all">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

@@ -1,28 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
-import { Product } from '../types';
+import { Product, Review } from '../types';
 import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
+import { refundOrder } from '../lib/orders';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const AdminDashboard: React.FC = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      navigate('/');
+      toast.error('ليس لديك صلاحية للوصول لهذه الصفحة');
+    }
+  }, [authLoading, isAdmin, navigate]);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'users'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'users' | 'reviews'>('products');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled' | 'on_hold'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'order', name?: string } | null>(null);
   const [walletModal, setWalletModal] = useState<{ userId: string, email: string, currentBalance: number, amount: string } | null>(null);
+  const [confirmInput, setConfirmInput] = useState('');
+
+  // Reset confirmation input when modal opens/closes
+  useEffect(() => {
+    setConfirmInput('');
+  }, [deleteConfirm]);
   
-  // Filter States
+  // Filter Orders
+  const filteredOrders = orders.filter(order => orderStatusFilter === 'all' || order.status === orderStatusFilter);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
@@ -33,6 +51,28 @@ export const AdminDashboard: React.FC = () => {
     const matchesPlatform = platformFilter === '' || product.platform === platformFilter;
     return matchesCategory && matchesPlatform;
   });
+
+
+  const isInitialLoad = useRef(true);
+
+  // New order listener
+  useEffect(() => {
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snapshot) => {
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        return;
+      }
+      
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          toast.success('طلب جديد وصل!');
+          fetchOrders(); // Refresh orders list
+        }
+      });
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -97,7 +137,17 @@ export const AdminDashboard: React.FC = () => {
       setUsersList(data);
     } catch (error) {
       console.error("Error fetching users:", error);
-      // Don't throw to avoid breaking Promise.all in init
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'reviews'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Review[];
+      setReviews(data);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'reviews');
+      toast.error('حدث خطأ أثناء تحميل التقييمات');
     }
   };
 
@@ -145,7 +195,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchProducts(), fetchOrders(), fetchUsers()]);
+      await Promise.all([fetchProducts(), fetchOrders(), fetchUsers(), fetchReviews()]);
       setLoading(false);
     };
     init();
@@ -201,6 +251,17 @@ export const AdminDashboard: React.FC = () => {
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `orders/${id}`);
       toast.error('حدث خطأ أثناء حذف الطلب');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    try {
+      await deleteDoc(doc(db, 'reviews', reviewId));
+      toast.success('تم حذف التقييم');
+      fetchReviews();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `reviews/${reviewId}`);
+      toast.error('حدث خطأ أثناء حذف التقييم');
     }
   };
 
@@ -270,6 +331,14 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             العملاء
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+              activeTab === 'reviews' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            التقييمات
           </button>
         </div>
 
@@ -394,6 +463,20 @@ export const AdminDashboard: React.FC = () => {
         </div>
       ) : activeTab === 'orders' ? (
           <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h2 className="text-white font-bold">إدارة الطلبات</h2>
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value as any)}
+                className="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="all">الكل</option>
+                <option value="pending">قيد المعالجة</option>
+                <option value="on_hold">قيد الانتظار</option>
+                <option value="completed">تم التسليم</option>
+                <option value="cancelled">ملغي</option>
+              </select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-right">
                 <thead className="bg-slate-800/50 text-slate-400 text-sm">
@@ -407,11 +490,11 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {orders.length === 0 ? (
+                  {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-500 font-bold">لا يوجد طلبات حالياً</td>
+                      <td colSpan={6} className="p-12 text-center text-slate-500 font-bold">لا توجد طلبات بهذا التصنيف</td>
                     </tr>
-                  ) : orders.map((order) => (
+                  ) : filteredOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-slate-800/30 transition-colors">
                       <td className="p-4 text-xs font-mono text-slate-400">{order.id}</td>
                       <td className="p-4">
@@ -423,9 +506,12 @@ export const AdminDashboard: React.FC = () => {
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                           order.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
                           order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                          order.status === 'on_hold' ? 'bg-blue-500/20 text-blue-400' :
                           'bg-amber-500/20 text-amber-400'
                         }`}>
-                          {order.status === 'completed' ? 'تم التسليم' : order.status === 'cancelled' ? 'ملغي' : 'قيد المعالجة'}
+                          {order.status === 'completed' ? 'تم التسليم' : 
+                          order.status === 'cancelled' ? 'ملغي' : 
+                          order.status === 'on_hold' ? 'قيد الانتظار' : 'قيد المعالجة'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -492,24 +578,38 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <select 
                             value={order.status}
-                            onChange={(e) => {
-                              if (e.target.value === 'completed') {
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              if (newStatus === 'cancelled') {
+                                if (window.confirm('إلغاء الطلب سيؤدي لاسترداد المبلغ للعميل. هل أنت متأكد؟')) {
+                                  try {
+                                    // Assuming getOrderTotal is available or order.total exists
+                                    await refundOrder(order.id, order.userId!, order.total);
+                                    await fetchOrders();
+                                    toast.success('تم إلغاء الطلب واسترداد المبلغ');
+                                  } catch (e) {
+                                    console.error(e);
+                                    toast.error('فشل إلغاء الطلب');
+                                  }
+                                }
+                              } else if (newStatus === 'completed') {
                                 setDeliveryModal({ 
                                   id: order.id, 
                                   status: 'completed', 
-                                  info: typeof order.deliveryInfo === 'string' 
-                                    ? order.deliveryInfo 
+                                  info: typeof order.deliveryInfo === 'string'
+                                    ? order.deliveryInfo
                                     : order.deliveryInfo && typeof order.deliveryInfo === 'object'
                                       ? Object.entries(order.deliveryInfo).map(([k, v]) => `${k}: ${v}`).join('\n')
-                                      : '' 
+                                      : ''
                                 });
                               } else {
-                                updateOrderStatus(order.id, e.target.value);
+                                updateOrderStatus(order.id, newStatus);
                               }
                             }}
                             className="bg-slate-800 border border-slate-700 text-xs rounded-lg p-1 text-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none"
                           >
                             <option value="pending">قيد المعالجة</option>
+                            <option value="on_hold">قيد الانتظار</option>
                             <option value="completed">تم التسليم</option>
                             <option value="cancelled">ملغي</option>
                           </select>
@@ -520,6 +620,44 @@ export const AdminDashboard: React.FC = () => {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : activeTab === 'reviews' ? (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead className="bg-slate-800/50 text-slate-400 text-sm">
+                  <tr>
+                    <th className="p-4 mr-2">المنتج</th>
+                    <th className="p-4">العميل</th>
+                    <th className="p-4">التقييم</th>
+                    <th className="p-4">التعليق</th>
+                    <th className="p-4">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {reviews.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-slate-500 font-bold">لا توجد تقييمات حالياً</td>
+                    </tr>
+                  ) : reviews.map((review) => (
+                    <tr key={review.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-4 text-slate-200">{productsById.get(review.productId)?.name || review.productId}</td>
+                      <td className="p-4 text-slate-200">{review.userName || 'غير معروف'}</td>
+                      <td className="p-4 font-bold text-amber-400">{review.rating} / 5</td>
+                      <td className="p-4 text-slate-500 text-sm">{review.comment}</td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleDeleteReview(review.id)}
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -807,7 +945,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white">
                   هل أنت متأكد من حذف هذا {deleteConfirm.type === 'product' ? 'المنتج' : 'الطلب'}؟
                 </h3>
@@ -817,6 +955,15 @@ export const AdminDashboard: React.FC = () => {
                   </p>
                 )}
                 <p className="text-slate-400">لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.</p>
+                {deleteConfirm.type === 'product' && (
+                  <input
+                    type="text"
+                    value={confirmInput}
+                    onChange={(e) => setConfirmInput(e.target.value)}
+                    placeholder={`اكتب "${deleteConfirm.name}" للتأكيد`}
+                    className="admin-input"
+                  />
+                )}
               </div>
               <div className="flex gap-3 pt-2">
                 <button
@@ -826,6 +973,7 @@ export const AdminDashboard: React.FC = () => {
                   إلغاء
                 </button>
                 <button
+                  disabled={deleteConfirm.type === 'product' && confirmInput !== deleteConfirm.name}
                   onClick={() => {
                     if (deleteConfirm.type === 'product') {
                       handleDelete(deleteConfirm.id);
@@ -833,7 +981,11 @@ export const AdminDashboard: React.FC = () => {
                       handleDeleteOrder(deleteConfirm.id);
                     }
                   }}
-                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-600/20"
+                  className={`flex-1 px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${
+                    deleteConfirm.type === 'product' && confirmInput !== deleteConfirm.name
+                      ? 'bg-red-900/50 text-slate-500 cursor-not-allowed'
+                      : 'bg-red-600 text-white hover:bg-red-500 shadow-red-600/20'
+                  }`}
                 >
                   حذف {deleteConfirm.type === 'product' ? 'المنتج' : 'الطلب'}
                 </button>

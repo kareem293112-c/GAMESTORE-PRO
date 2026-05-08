@@ -195,8 +195,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
           <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-amber-500 rounded-full" 
-              style={{ width: `${(product.stock / 20) * 100}%` }}
+              className={`h-full bg-amber-500 rounded-full ${product.stock < 10 ? 'animate-pulse shadow-[0_0_10px_2px_rgba(245,158,11,0.6)]' : ''}`} 
+              style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
             />
           </div>
         </div>

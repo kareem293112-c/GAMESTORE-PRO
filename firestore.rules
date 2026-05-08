@@ -39,14 +39,18 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow get: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (request.query.limit <= 50) 
-                  && (request.auth.token.admin == true || resource.data.userId == request.auth.uid); // Need to adjust this to fit existing schema. 
-                  // Correction: Use userId query filter.
+                  && (request.auth.token.admin == true || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() 
                     && incoming().userId == request.auth.uid
                     && incoming().status == 'pending'
                     && incoming().createdAt == requestTime();
-      allow update: if isSignedIn() && isAdmin() // Simplified for now; need more complex logic for status changes
+      allow update: if isSignedIn() && isAdmin()
                     && incoming().diff(existing()).affectedKeys().hasAny(['status', 'deliveryInfo']);
+      
+      // Helper for order status
+      function isValidStatus(status) {
+        return status in ['pending', 'processing', 'delivered', 'cancelled', 'on_hold'];
+      }
     }
 
     // Admins Collection
@@ -55,10 +59,10 @@ service cloud.firestore {
       allow write: if false; // Admins managed via console or script
     }
 
-    // --- Live Activities ---
-    match /liveActivities/{activityId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // --- Reviews Collection ---
+    match /reviews/{reviewId} {
+      allow list, get: if true;
+      allow delete: if isAdmin();
     }
   }
 }
