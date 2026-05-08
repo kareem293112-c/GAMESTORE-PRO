@@ -30,7 +30,7 @@ const StatCard: React.FC<{
   label: string; 
   value: number | string; 
   color: 'indigo' | 'cyan' | 'emerald'; 
-}> = ({ icon: Icon, label, value, color }) => {
+  }> = ({ icon: Icon, label, value, color }) => {
   const colors = {
     indigo: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
     cyan: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
