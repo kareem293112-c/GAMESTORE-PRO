@@ -3,10 +3,10 @@ import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firesto
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product } from '../types';
-import { Package, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion'; // تأكد من تثبيت framer-motion أو عدلها لـ motion/react حسب مكتبتك
+import { Package, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Loader2, RotateCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { refundOrder } from '../lib/orders'; // المسار الذي أنشأته
+import { refundOrder } from '../lib/orders';
 
 // --- Interfaces ---
 interface Order {
@@ -14,7 +14,7 @@ interface Order {
   userId: string;
   totalPrice: number;
   status: string;
-  productId: string; // مهم لعملية إرجاع المخزون
+  productId: string;
   createdAt: any;
 }
 
@@ -24,7 +24,7 @@ interface User {
   displayName: string;
   balance: number;
   role: string;
-}
+
 
 const StatCard: React.FC<{ icon: React.ElementType, label: string, value: number | string, color: 'indigo' | 'cyan' | 'emerald' }> = ({ icon: Icon, label, value, color }) => {
   const colors = {
