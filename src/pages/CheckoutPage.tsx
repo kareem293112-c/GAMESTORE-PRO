@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, doc, setDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { formatPrice } from '../lib/utils';
 import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -35,40 +35,71 @@ export const CheckoutPage: React.FC = () => {
     try {
       const orderId = `ORD-${Date.now()}`;
 
-      if (!canUseWallet) {
-        toast.error('رصيدك غير كافٍ لإتمام العملية. يرجى شحن محفظتك أولاً.');
-        setLoading(false);
-        return;
-      }
+      // Run Transaction to ensure atomic operations (stock check & balance deduction)
+      await runTransaction(db, async (transaction) => {
+        // 1. Read necessary documents
+        const userDocRef = doc(db, 'users', user!.uid);
+        const userDoc = await transaction.get(userDocRef);
+        const userData = userDoc.data();
+        
+        if (!userData) throw new Error('User not found');
+        
+        const balance = userData.balance || 0;
+        if (balance < total) {
+          throw new Error('insufficient_balance');
+        }
 
-      const batch = writeBatch(db);
-      
-      // 1. Deduct balance from user
-      batch.update(doc(db, 'users', user!.uid), {
-        balance: (profile?.balance || 0) - total,
-        updatedAt: serverTimestamp()
+        // 2. Check stock for each item
+        const productRefs = items.map(item => doc(db, 'products', item.productId));
+        const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+        for (let i = 0; i < productDocs.length; i++) {
+            const product = productDocs[i].data();
+            if (!product) throw new Error(`Product ${items[i].name} not found`);
+            if (product.stock < items[i].quantity) {
+                throw new Error(`insufficient_stock_${items[i].name}`);
+            }
+        }
+
+        // 3. Update Balance
+        transaction.update(userDocRef, {
+            balance: balance - total,
+            updatedAt: serverTimestamp()
+        });
+
+        // 4. Update Stock
+        productRefs.forEach((ref, i) => {
+           transaction.update(ref, {
+               stock: productDocs[i].data()!.stock - items[i].quantity
+           });
+        });
+
+        // 5. Create Order
+        transaction.set(doc(db, 'orders', orderId), {
+            userId: user?.uid,
+            items,
+            total,
+            status: 'pending',
+            paymentMethod: 'wallet',
+            createdAt: serverTimestamp(),
+            customerEmail: formData.email,
+            customerName: formData.name
+        });
       });
-
-      // 2. Create order as PENDING
-      batch.set(doc(db, 'orders', orderId), {
-        userId: user?.uid,
-        items,
-        total,
-        status: 'pending',
-        paymentMethod: 'wallet',
-        createdAt: serverTimestamp(),
-        customerEmail: formData.email,
-        customerName: formData.name
-      });
-
-      await batch.commit();
 
       toast.success('تم الدفع بنجاح من المحفظة');
       clearCart();
       setSuccess(true);
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إتمام الطلب');
-      console.error(error);
+    } catch (error: any) {
+        if (error.message === 'insufficient_balance') {
+            toast.error('رصيدك غير كافٍ لإتمام العملية. يرجى شحن محفظتك أولاً.');
+        } else if (error.message.startsWith('insufficient_stock_')) {
+            const productName = error.message.replace('insufficient_stock_', '');
+            toast.error(`عذراً، الكمية المتوفرة من ${productName} غير كافية.`);
+        } else {
+            toast.error('حدث خطأ أثناء إتمام الطلب');
+        }
+        console.error(error);
     } finally {
       setLoading(false);
     }
