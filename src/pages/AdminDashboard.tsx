@@ -8,7 +8,7 @@ import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
-import { refundOrder } from '../lib/orders';  // تم تعديل المسار هنا
+import { refundOrder } from '../lib/orders'; // تم تعديل المسار هنا
 
 export const AdminDashboard: React.FC = () => {
   const { loading: authLoading } = useAuth();
