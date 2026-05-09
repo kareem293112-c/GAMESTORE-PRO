@@ -58,6 +58,8 @@ export const AdminDashboard: React.FC = () => {
     return matchesCategory && matchesPlatform && matchesName;
   });
 
+  const productsById = React.useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+
 
   const isInitialLoad = useRef(true);
 

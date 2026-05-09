@@ -56,7 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
 
-        <div className="relative overflow-hidden aspect-[4/3] bg-slate-800">
+        <div className="relative overflow-hidden aspect-[4/3] bg-black">
           <div className="absolute top-2 -left-2 z-20">
             <div className="relative bg-[#3b82f6] text-white text-[10px] font-bold px-3 py-1 shadow-md
               after:content-[''] after:absolute after:top-full after:left-0 after:border-t-[5px] after:border-t-[#1d4ed8] after:border-l-[5px] after:border-l-transparent">
@@ -68,7 +68,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
             />
           </Link>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-60 pointer-events-none"></div>
@@ -99,7 +99,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <span className="bg-slate-800 px-1 py-0 rounded uppercase">{product.category}</span>
           </div>
           <Link to={`/product/${product.id}`}>
-            <h3 className="text-xs font-bold text-slate-100 group-hover:text-indigo-400 transition-colors line-clamp-1">
+            <h3 className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors line-clamp-1">
               {product.name}
             </h3>
           </Link>
