@@ -4,7 +4,7 @@ import { Product } from '../../types';
 import { formatPrice } from '../../lib/utils';
 import { useCart } from '../../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { QuickViewModal } from './QuickViewModal';
 
 interface ProductCardProps {
@@ -13,6 +13,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [flyIcon, setFlyIcon] = useState<{ x: number, y: number } | null>(null);
@@ -39,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     setTimeout(() => {
       setIsAdded(false);
       setFlyIcon(null);
-    }, 1000);
+    }, 5000);
   };
 
   return (
@@ -48,28 +49,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="group relative bg-[#1e293b]/40 border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300"
+        className="group relative bg-[#1e293b]/60 rounded-none overflow-hidden hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 p-0"
         dir="rtl"
       >
         {/* Discount Badge */}
         {product.discount > 0 && (
-          <div className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-lg">
+          <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg">
             -{product.discount}%
           </div>
         )}
 
         {/* Favorite Button */}
-        <button className="absolute top-3 left-3 z-10 p-2 bg-slate-900/60 backdrop-blur-md rounded-xl text-slate-400 hover:text-red-400 transition-colors">
-          <Heart className="w-4 h-4" />
+        <button className="absolute top-2 left-2 z-10 p-1.5 bg-slate-900/60 backdrop-blur-md rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+          <Heart className="w-3.5 h-3.5" />
         </button>
 
         {/* Image Section */}
-        <div className="relative aspect-[16/9] overflow-hidden">
+        <div className="relative aspect-square overflow-hidden">
           <Link to={`/product/${product.id}`} className="block w-full h-full">
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           </Link>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-60 pointer-events-none" />
@@ -78,109 +79,127 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/40 backdrop-blur-[2px]">
             <button
               onClick={() => setIsQuickViewOpen(true)}
-              className="px-4 py-2 bg-white text-slate-900 rounded-xl font-bold text-xs flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl"
+              className="px-3 py-1.5 bg-white text-slate-900 rounded-lg font-bold text-[10px] flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-xl"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" />
               عرض سريع
             </button>
           </div>
 
           {/* Platform Tag */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-indigo-600/20 backdrop-blur-md border border-indigo-500/30 rounded-lg">
-            <Monitor className="w-3 h-3 text-indigo-400" />
-            <span className="text-[10px] text-indigo-300 font-bold uppercase">{product.platform}</span>
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-indigo-600/20 backdrop-blur-md border border-indigo-500/30 rounded-md">
+            <Monitor className="w-2.5 h-2.5 text-indigo-400" />
+            <span className="text-[9px] text-indigo-300 font-bold uppercase">{product.platform}</span>
           </div>
         </div>
 
         {/* Content Section */}
-      <div className="p-4 space-y-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-            <span className="bg-slate-800 px-1.5 py-0.5 rounded uppercase">{product.category}</span>
+      <div className="p-3 space-y-2">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
+            <span className="bg-slate-800 px-1 py-0 rounded uppercase">{product.category}</span>
           </div>
           <Link to={`/product/${product.id}`}>
-            <h3 className="text-sm font-bold text-slate-100 group-hover:text-indigo-400 transition-colors line-clamp-1">
+            <h3 className="text-xs font-bold text-slate-100 group-hover:text-indigo-400 transition-colors line-clamp-1">
               {product.name}
             </h3>
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-3 h-3 ${
+                  className={`w-2.5 h-2.5 ${
                     i < Math.floor(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-[10px] text-slate-500 font-bold">({product.rating})</span>
+            <span className="text-[9px] text-slate-500 font-bold">({product.rating})</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex flex-col">
-            {product.discount > 0 && (
-              <span className="text-[10px] text-slate-500 line-through">
-                {formatPrice(product.price)}
-              </span>
-            )}
-            <span className="text-lg font-black text-white">
-              {formatPrice(discountedPrice)}
-            </span>
-          </div>
-          
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-lg ${
-              product.stock > 0
-                ? isAdded 
-                  ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20 active:scale-95'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
-            }`}
-          >
-            {product.stock > 0 ? (
-              <>
-                <AnimatePresence>
-                  {flyIcon && (
-                    <motion.div
-                      initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-                      animate={{ 
-                        x: flyIcon.x, 
-                        y: flyIcon.y, 
-                        scale: 0.2, 
-                        opacity: 0,
-                        rotate: 360
-                      }}
-                      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute z-[100] pointer-events-none"
-                    >
-                      <img src={product.imageUrl} className="w-12 h-12 rounded-full object-cover shadow-2xl border-2 border-white" alt="" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                {isAdded ? (
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex items-center gap-2"
-                  >
-                    <Zap className="w-4 h-4 fill-current" />
-                    تمت الإضافة
-                  </motion.div>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-4 h-4" />
-                    إضافة إلى السلة
-                  </>
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                {product.discount > 0 && (
+                  <span className="text-[9px] text-slate-500 line-through">
+                    {formatPrice(product.price)}
+                  </span>
                 )}
-              </>
-            ) : (
-              'نفذت الكمية'
-            )}
-          </button>
+                <span className="text-sm font-black text-white">
+                  {formatPrice(discountedPrice)}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock === 0}
+              className={`relative flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
+                product.stock > 0
+                  ? isAdded 
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20 active:scale-95'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
+              }`}
+            >
+              {product.stock > 0 ? (
+                <>
+                  <AnimatePresence>
+                    {flyIcon && (
+                      <motion.div
+                        initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+                        animate={{ 
+                          x: flyIcon.x, 
+                          y: flyIcon.y, 
+                          scale: 0.2, 
+                          opacity: 0,
+                          rotate: 360
+                        }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute z-[100] pointer-events-none"
+                      >
+                        <img src={product.imageUrl} className="w-10 h-10 rounded-full object-cover shadow-2xl border-2 border-white" alt="" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {isAdded ? (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-current" />
+                      تمت الإضافة
+                    </motion.div>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                      إضافة إلى السلة
+                    </>
+                  )}
+                </>
+              ) : (
+                'نفذت الكمية'
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isAdded && (
+                <motion.button
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  onClick={() => navigate('/checkout')}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 active:scale-95 transition-all"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  إتمام الشراء
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
       

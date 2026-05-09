@@ -43,8 +43,8 @@ export const ActivityFeed: React.FC = () => {
 
         const product = data.items?.[0]?.name || t('activity.fallbackProduct');
         
-        // Filter out specific requested activity
-        if (rawName.includes('Kareem')) {
+        // Filter out specific requested activity (PERMANENT FILTER - DO NOT REMOVE)
+        if (rawName.includes('Kareem') || (rawName.includes('ABN s.') && product.includes('Windows'))) {
           return null;
         }
 

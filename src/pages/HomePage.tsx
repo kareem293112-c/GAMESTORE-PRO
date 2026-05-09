@@ -6,7 +6,6 @@ import { SAMPLE_PRODUCTS } from '../constants';
 import { ProductCard } from '../components/ui/ProductCard';
 import { useSearch } from '../context/SearchContext';
 import { useLanguage } from '../context/LanguageContext';
-import { ActivityFeed } from '../components/layout/ActivityFeed';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Gamepad2, Gift, MousePointer2, Percent, TrendingUp, Search, X, User, Plus, ShieldCheck, Wallet } from 'lucide-react';
@@ -274,7 +273,7 @@ export const HomePage: React.FC = () => {
             columnClassName="my-masonry-grid_column"
           >
             {filteredProducts.map((product) => (
-              <div key={product.id}>
+              <div key={product.id} className="p-0">
                 <ProductCard product={product} />
               </div>
             ))}
@@ -291,7 +290,6 @@ export const HomePage: React.FC = () => {
             </div>
           )}
       </section>
-      <ActivityFeed />
       <WhatsAppButton />
     </div>
   );
