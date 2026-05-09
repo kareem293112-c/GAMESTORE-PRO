@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
+// قراءة الإعدادات من المتغيرات البيئية التي وضعتها في Render
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -14,5 +15,18 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// تصدير الخدمات لاستخدامها في بقية المشروع
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+
+// اختبار الاتصال (اختياري)
+export async function testConnection() {
+  try {
+    console.log("Attempting to connect to Firebase...");
+  } catch (error) {
+    console.error("Firebase connection error:", error);
+  }
+}
+
+testConnection();
