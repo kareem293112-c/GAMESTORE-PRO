@@ -56,7 +56,7 @@ export const ProductDetailPage: React.FC = () => {
       setTimeout(() => {
         setIsAdded(false);
         setFlyIcon(null);
-      }, 1000);
+      }, 5000);
     }
   };
 
@@ -438,8 +438,8 @@ export const ProductDetailPage: React.FC = () => {
                     animate={{ scale: 1, opacity: 1 }}
                     className="flex items-center gap-2"
                   >
-                    <ShieldCheck className="w-6 h-6" />
-                    تمت الإضافة بنجاح
+                    <ShoppingCart className="w-6 h-6" />
+                    إتمام الشراء
                   </motion.div>
                 ) : (
                   <>
