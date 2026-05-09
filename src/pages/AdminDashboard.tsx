@@ -313,7 +313,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {(isAdmin || isProductManager) && <StatCard icon={ShoppingBag} label="المنتجات" value={products.length} color="indigo" />}
           {(isAdmin || isOrderManager) && <StatCard icon={Package} label="إجمالي الطلبات" value={orders.length} color="cyan" />}
-          {isAdmin && <StatCard icon={Users} label="العملاء" value={new Set(orders.map((o: any) => o.userId)).size} color="emerald" />}
+          {isAdmin && <StatCard icon={Users} label="العملاء" value={usersList.length} color="emerald" />}
         </div>
 
         {/* Tab Switcher */}

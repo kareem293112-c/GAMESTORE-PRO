@@ -53,9 +53,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:block truncate">
               GAMESTORE PRO
             </span>
-            <span className="hidden xs:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-500 tracking-tighter uppercase">
+            <span className="hidden xs:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-500 tracking-tighter uppercase">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              LIVE
+              {12} {language === 'ar' ? 'متصل الآن' : 'ONLINE'}
             </span>
           </Link>
 

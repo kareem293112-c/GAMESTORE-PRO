@@ -9,6 +9,7 @@ import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { CartSidebar } from './components/ui/CartSidebar';
+import { ActivityFeed } from './components/layout/ActivityFeed';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -83,6 +84,7 @@ const AppContent: React.FC = () => {
         </Routes>
       </main>
 
+      <ActivityFeed />
       <Footer />
       <Toaster position="bottom-left" />
     </div>
