@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -28,13 +28,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeProfile: () => void = () => {};
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      
+      // Cleanup previous profile listener
+      unsubscribeProfile();
+
       if (firebaseUser) {
-        try {
-          const docRef = doc(db, 'users', firebaseUser.uid);
-          const docSnap = await getDoc(docRef);
-          
+        const docRef = doc(db, 'users', firebaseUser.uid);
+        
+        unsubscribeProfile = onSnapshot(docRef, async (docSnap) => {
           if (docSnap.exists()) {
             setProfile({ uid: firebaseUser.uid, ...docSnap.data() } as UserProfile);
           } else {
@@ -47,19 +52,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               createdAt: serverTimestamp()
             };
             await setDoc(docRef, newProfile);
-            setProfile({ uid: firebaseUser.uid, ...newProfile });
+            // Profile will be updated by the next snapshot
           }
-        } catch (error) {
-          console.error("Error fetching/creating profile:", error);
+        }, (error) => {
+          console.error("Error in profile snapshot:", error);
           setProfile(null);
-        }
+        });
       } else {
         setProfile(null);
       }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      unsubscribeProfile();
+    };
   }, []);
 
   const isSuperAdmin = profile?.role === 'admin' || user?.email === 'karmo2931@gmail.com';
