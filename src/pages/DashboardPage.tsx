@@ -50,7 +50,12 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-slate-400 font-medium">{user?.email}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 bg-indigo-400/10 px-3 py-1 rounded-full">
-                    <User className="w-3.5 h-3.5" /> عميل متميز
+                    <User className="w-3.5 h-3.5" /> {
+                      profile?.role === 'admin' ? 'مدير النظام' :
+                      profile?.role === 'productManager' ? 'مدير المنتجات' :
+                      profile?.role === 'orderManager' ? 'مدير الطلبات' :
+                      'عميل متميز'
+                    }
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-500/10 px-3 py-1 rounded-full">
                     <Calendar className="w-3.5 h-3.5" /> انضم في {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA') : 'قريباً'}
