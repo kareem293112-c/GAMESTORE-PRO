@@ -33,6 +33,7 @@ export const AdminDashboard: React.FC = () => {
     isOrderManager ? 'orders' : 'products'
   );
   const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled' | 'on_hold'>('all');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'order', name?: string } | null>(null);
   const [walletModal, setWalletModal] = useState<{ userId: string, email: string, currentBalance: number, amount: string } | null>(null);
   const [confirmInput, setConfirmInput] = useState('');
@@ -683,6 +684,16 @@ export const AdminDashboard: React.FC = () => {
           </div>
         ) : (
           <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h2 className="text-white font-bold">إدارة العملاء</h2>
+              <input 
+                  type="text"
+                  placeholder="بحث بالبريد الإلكتروني..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 w-64"
+              />
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-right">
                 <thead className="bg-slate-800/50 text-slate-400 text-sm">
@@ -695,11 +706,11 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {usersList.length === 0 ? (
+                  {usersList.filter(u => u.email?.toLowerCase().includes(userSearchQuery.toLowerCase())).length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-12 text-center text-slate-500 font-bold">لا يوجد مستخدمين حالياً</td>
                     </tr>
-                  ) : usersList.map((userItem) => (
+                  ) : usersList.filter(u => u.email?.toLowerCase().includes(userSearchQuery.toLowerCase())).map((userItem) => (
                     <tr key={userItem.uid} className="hover:bg-slate-800/30 transition-colors">
                       <td className="p-4 font-bold text-slate-200">{userItem.displayName || 'بدون اسم'}</td>
                       <td className="p-4 text-xs text-slate-400 font-mono">{userItem.email}</td>
