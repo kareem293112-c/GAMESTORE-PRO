@@ -163,13 +163,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
           </div>
         </div>
-
-        <QuickViewModal 
-          product={product} 
-          isOpen={isQuickViewOpen} 
-          onClose={() => setIsQuickViewOpen(false)} 
-        />
       </motion.div>
+
+      <QuickViewModal 
+        product={product} 
+        isOpen={isQuickViewOpen} 
+        onClose={() => setIsQuickViewOpen(false)} 
+      />
     </>
   );
 };
