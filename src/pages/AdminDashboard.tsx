@@ -28,7 +28,10 @@ export const AdminDashboard: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'users' | 'reviews'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'users' | 'reviews'>(
+    isProductManager || isAdmin ? 'products' : 
+    isOrderManager ? 'orders' : 'products'
+  );
   const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled' | 'on_hold'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'order', name?: string } | null>(null);
   const [walletModal, setWalletModal] = useState<{ userId: string, email: string, currentBalance: number, amount: string } | null>(null);
@@ -303,45 +306,53 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <StatCard icon={ShoppingBag} label="المنتجات" value={products.length} color="indigo" />
-          <StatCard icon={Package} label="إجمالي الطلبات" value={orders.length} color="cyan" />
-          <StatCard icon={Users} label="العملاء" value={new Set(orders.map(o => o.userId)).size} color="emerald" />
+          {(isAdmin || isProductManager) && <StatCard icon={ShoppingBag} label="المنتجات" value={products.length} color="indigo" />}
+          {(isAdmin || isOrderManager) && <StatCard icon={Package} label="إجمالي الطلبات" value={orders.length} color="cyan" />}
+          {isAdmin && <StatCard icon={Users} label="العملاء" value={new Set(orders.map((o: any) => o.userId)).size} color="emerald" />}
         </div>
 
         {/* Tab Switcher */}
         <div className="flex bg-slate-900/50 p-1 rounded-2xl border border-slate-800 w-fit">
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
-              activeTab === 'products' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            المنتجات
-          </button>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
-              activeTab === 'orders' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            الطلبات
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
-              activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            العملاء
-          </button>
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
-              activeTab === 'reviews' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            التقييمات
-          </button>
+          {(isAdmin || isProductManager) && (
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+                activeTab === 'products' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              المنتجات
+            </button>
+          )}
+          {(isAdmin || isOrderManager) && (
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+                activeTab === 'orders' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              الطلبات
+            </button>
+          )}
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+                  activeTab === 'users' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                العملاء
+              </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${
+                  activeTab === 'reviews' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                التقييمات
+              </button>
+            </>
+          )}
         </div>
 
         {/* Content */}
