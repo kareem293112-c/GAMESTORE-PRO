@@ -47,16 +47,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="group relative bg-[#1e293b]/60 rounded-none hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 p-0"
+        /* التعديل: جعلنا البطاقة flex-col و h-full لتوحيد الارتفاع */
+        className="group relative bg-[#1e293b]/60 rounded-xl hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 p-0 flex flex-col h-full border border-slate-700/50 overflow-hidden"
         dir="rtl"
       >
+        {/* ملصق الخصم */}
         {product.discount > 0 && (
-          <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg">
+          <div className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-xl ring-2 ring-red-600/20">
             -{product.discount}%
           </div>
         )}
 
-        <div className="relative overflow-hidden aspect-[4/3] bg-slate-800">
+        {/* حاوية الصورة المثبتة */}
+        <div className="relative overflow-hidden aspect-[16/9] bg-slate-800 shrink-0">
           <div className="absolute top-2 -left-2 z-20">
             <div className="relative bg-[#3b82f6] text-white text-[10px] font-bold px-3 py-1 shadow-md
               after:content-[''] after:absolute after:top-full after:left-0 after:border-t-[5px] after:border-t-[#1d4ed8] after:border-l-[5px] after:border-l-transparent">
@@ -68,17 +71,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover object-center transition-transform duration-500"
+              className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
             />
           </Link>
+          
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-60 pointer-events-none"></div>
           
+          {/* زر العرض السريع */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/40 backdrop-blur-[2px]">
             <button
               onClick={() => setIsQuickViewOpen(true)}
-              className="px-3 py-1.5 bg-white text-slate-900 rounded-lg font-bold text-[10px] flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-xl"
+              className="px-4 py-2 bg-white text-slate-900 rounded-lg font-bold text-xs flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-2xl"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-4 h-4" />
               عرض سريع
             </button>
           </div>
@@ -89,52 +94,57 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
 
-        <div className="absolute top-2 right-2 z-10 p-1.5 bg-slate-900/60 backdrop-blur-md rounded-lg text-slate-400 hover:text-red-400 transition-colors">
-          <Heart className="w-3.5 h-3.5" />
+        {/* زر المفضلة */}
+        <div className="absolute top-3 left-3 z-10 p-2 bg-slate-900/60 backdrop-blur-md rounded-full text-slate-400 hover:text-red-400 transition-colors cursor-pointer border border-slate-700/50">
+          <Heart className="w-4 h-4" />
         </div>
 
-      <div className="p-3 space-y-2">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium">
-            <span className="bg-slate-800 px-1 py-0 rounded uppercase">{product.category}</span>
-          </div>
-          <Link to={`/product/${product.id}`}>
-            <h3 className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors line-clamp-1">
-              {product.name}
-            </h3>
-          </Link>
-          <div className="flex items-center gap-0.5">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-2.5 h-2.5 ${
-                    i < Math.floor(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'
-                  }`}
-                />
-              ))}
+        {/* محتوى البطاقة (النصوص) */}
+        <div className="p-4 flex flex-col flex-grow">
+          <div className="space-y-1 mb-4">
+            <div className="flex items-center gap-1 text-[10px] text-indigo-400 font-bold tracking-wider">
+              <span className="bg-indigo-500/10 px-2 py-0.5 rounded uppercase border border-indigo-500/20">
+                {product.category}
+              </span>
             </div>
-            <span className="text-[9px] text-slate-500 font-bold">({product.rating})</span>
+            <Link to={`/product/${product.id}`}>
+              <h3 className="text-[15px] font-bold text-white group-hover:text-indigo-400 transition-colors line-clamp-1 leading-snug">
+                {product.name}
+              </h3>
+            </Link>
+            <div className="flex items-center gap-1">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-3 h-3 ${
+                      i < Math.floor(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[10px] text-slate-500 font-bold">({product.rating})</span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex flex-col gap-1 w-full">
+          {/* التعديل: السعر والزر في حاوية واحدة مدفوعة للأسفل بـ mt-auto */}
+          <div className="mt-auto pt-4 border-t border-slate-700/30">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 {product.discount > 0 && (
-                  <span className="text-[9px] text-slate-500 line-through">
+                  <span className="text-[10px] text-slate-500 line-through decoration-red-500/50">
                     {formatPrice(product.price)}
                   </span>
                 )}
-                <span className="text-sm font-black text-white">
+                <span className="text-base font-black text-white">
                   {formatPrice(discountedPrice)}
                 </span>
               </div>
+              
               <button
                 onClick={(e) => isAdded ? navigate('/checkout') : handleAddToCart(e)}
                 disabled={product.stock === 0}
-                className={`relative flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
+                className={`relative flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all shadow-lg min-w-[120px] ${
                   product.stock > 0
                     ? isAdded 
                       ? 'bg-emerald-600 text-white shadow-emerald-500/20'
@@ -173,8 +183,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                       </motion.div>
                     ) : (
                       <>
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                        إضافة إلى السلة
+                        <ShoppingCart className="w-4 h-4" />
+                        إضافة
                       </>
                     )}
                   </>
@@ -185,25 +195,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
           </div>
         </div>
-      </div>
-      
-      {product.stock > 0 && product.stock < 10 && (
-        <div className="px-4 pb-4">
-          <div className="flex items-center justify-between mb-1 text-[10px]">
-            <span className="text-amber-400 font-bold flex items-center gap-1">
-              <Zap className="w-3 h-3" /> مخزون منخفض
-            </span>
-            <span className="text-slate-500 font-bold">{product.stock} متبقي</span>
+        
+        {/* مخزون منخفض */}
+        {product.stock > 0 && product.stock < 10 && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between mb-1 text-[10px]">
+              <span className="text-amber-400 font-bold flex items-center gap-1">
+                <Zap className="w-3 h-3" /> مخزون منخفض
+              </span>
+              <span className="text-slate-500 font-bold">{product.stock} متبقي</span>
+            </div>
+            <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className={`h-full bg-amber-500 rounded-full ${product.stock < 10 ? 'animate-pulse shadow-[0_0_10px_2px_rgba(245,158,11,0.6)]' : ''}`} 
+                style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
+              />
+            </div>
           </div>
-          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full bg-amber-500 rounded-full ${product.stock < 10 ? 'animate-pulse shadow-[0_0_10px_2px_rgba(245,158,11,0.6)]' : ''}`} 
-              style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
-    </motion.div>
+        )}
+      </motion.div>
 
       <QuickViewModal 
         product={product} 
