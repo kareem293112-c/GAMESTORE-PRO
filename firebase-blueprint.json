@@ -13,6 +13,7 @@
         "category": { "type": "string" },
         "platform": { "type": "string" },
         "imageUrl": { "type": "string" },
+        "costPrice": { "type": "number", "description": "The price at which the product was purchased by the store" },
         "rating": { "type": "number" },
         "featured": { "type": "boolean" },
         "releaseDate": { "type": "string" },

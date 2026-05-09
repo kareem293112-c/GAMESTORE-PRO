@@ -31,6 +31,7 @@ export interface Product {
     graphics?: string;
     storage?: string;
   };
+  costPrice?: number;
   createdAt: string;
 }
 

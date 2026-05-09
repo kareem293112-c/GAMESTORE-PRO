@@ -4,7 +4,7 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product, Review } from '../types';
-import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter } from 'lucide-react';
+import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter, CreditCard } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -97,6 +97,7 @@ export const AdminDashboard: React.FC = () => {
     name: '',
     description: '',
     price: 0,
+    costPrice: 0,
     discount: 0,
     stock: 0,
     category: '',
@@ -105,6 +106,22 @@ export const AdminDashboard: React.FC = () => {
     rating: 5,
     featured: false
   });
+
+  // Calculate Total Profits
+  const totalProfits = React.useMemo(() => {
+    return orders
+      .filter(order => ['completed', 'delivered', 'paid'].includes(order.status))
+      .reduce((acc, order) => {
+        const orderProfit = (order.items || []).reduce((itemAcc: number, item: any) => {
+          const product = productsById.get(item.productId);
+          const costPrice = product?.costPrice || 0;
+          // Use item.price which is the final price paid at checkout
+          const profitPerItem = item.price - costPrice;
+          return itemAcc + (profitPerItem * (item.quantity || 1));
+        }, 0);
+        return acc + orderProfit;
+      }, 0);
+  }, [orders, productsById]);
 
   const fetchProducts = async () => {
     try {
@@ -296,7 +313,7 @@ export const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => {
                   setCurrentProduct({
-                    name: '', description: '', price: 0, discount: 0, stock: 0,
+                    name: '', description: '', price: 0, costPrice: 0, discount: 0, stock: 0,
                     category: '', platform: '', imageUrl: '', rating: 5, featured: false
                   });
                   setIsModalOpen(true);
@@ -310,10 +327,11 @@ export const AdminDashboard: React.FC = () => {
         </header>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {(isAdmin || isProductManager) && <StatCard icon={ShoppingBag} label="المنتجات" value={products.length} color="indigo" />}
           {(isAdmin || isOrderManager) && <StatCard icon={Package} label="إجمالي الطلبات" value={orders.length} color="cyan" />}
           {isAdmin && <StatCard icon={Users} label="العملاء" value={usersList.length} color="emerald" />}
+          {isAdmin && <StatCard icon={CreditCard} label="إجمالي الأرباح" value={formatPrice(totalProfits)} color="amber" />}
         </div>
 
         {/* Tab Switcher */}
@@ -824,6 +842,15 @@ export const AdminDashboard: React.FC = () => {
                       type="number"
                       value={currentProduct.price}
                       onChange={(e) => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })}
+                      className="admin-input"
+                      required
+                    />
+                  </FormField>
+                  <FormField label="سعر الشراء / سعر التكلفة" required>
+                    <input
+                      type="number"
+                      value={currentProduct.costPrice}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, costPrice: Number(e.target.value) })}
                       className="admin-input"
                       required
                     />
