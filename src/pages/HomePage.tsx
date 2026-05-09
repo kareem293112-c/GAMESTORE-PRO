@@ -261,23 +261,17 @@ export const HomePage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Array(8).fill(0).map((_, i) => (
-              <div key={i} className="h-[380px] bg-slate-800/20 rounded-2xl animate-pulse" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {Array(10).fill(0).map((_, i) => (
+              <div key={i} className="h-[280px] bg-slate-800/20 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
-          <Masonry
-            breakpointCols={breakpointColumnsObj}
-            className="my-masonry-grid"
-            columnClassName="my-masonry-grid_column"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {filteredProducts.map((product) => (
-              <div key={product.id} className="p-0">
-                <ProductCard product={product} />
-              </div>
+              <ProductCard key={product.id} product={product} />
             ))}
-          </Masonry>
+          </div>
         ) : (
           <div className="col-span-full py-20 text-center space-y-4">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800 text-slate-500">
