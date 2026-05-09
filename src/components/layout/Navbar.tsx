@@ -15,7 +15,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, isProductManager, isOrderManager } = useAuth();
+  const canAccessAdmin = isAdmin || isProductManager || isOrderManager;
   const { itemCount } = useCart();
   const { searchQuery, setSearchQuery } = useSearch();
   const { language, setLanguage, t } = useLanguage();
@@ -123,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                   <span className="text-xs font-black text-emerald-400 leading-none mt-0.5">{formatPrice(profile?.balance || 0)}</span>
                 </div>
                 <Link
-                  to={isAdmin ? "/admin" : "/dashboard"}
+                  to={canAccessAdmin ? "/admin" : "/dashboard"}
                   className="flex items-center gap-2 p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 transition-colors"
                 >
                   <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
@@ -227,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             <Link to="/games" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2">
               {t('nav.games')}
             </Link>
-            {isAdmin && (
+            {canAccessAdmin && (
               <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-indigo-400 hover:text-indigo-300 py-2">
                 {t('nav.dashboard')}
               </Link>
