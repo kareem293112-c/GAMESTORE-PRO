@@ -135,12 +135,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                     {profile?.displayName?.[0] || user.email?.[0].toUpperCase()}
                   </div>
                 </Link>
-                <div className="hidden lg:flex flex-col text-start px-1">
+                <Link
+                  to={canAccessAdmin ? "/admin" : "/dashboard"}
+                  className="hidden lg:flex flex-col text-start px-1 hover:opacity-80 transition-opacity"
+                >
                   <span className="text-[10px] text-slate-400 leading-none">{t('common.welcome')}</span>
                   <span className="text-sm font-medium text-slate-200 truncate max-w-[100px]">
                     {profile?.displayName || user.email?.split('@')[0]}
                   </span>
-                </div>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="p-2 text-slate-400 hover:text-red-400 transition-colors"

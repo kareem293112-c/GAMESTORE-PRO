@@ -6,13 +6,19 @@ service cloud.firestore {
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isSignedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    function isSignedIn() { return request.auth != null; }
     function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
     function requestTime() { return request.time; }
 
     // Global Catch-All: Default Deny
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // --- Activity Feed ---
+    match /activity/{activityId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // --- Users Collection ---
@@ -38,8 +44,7 @@ service cloud.firestore {
     // --- Orders Collection ---
     match /orders/{orderId} {
       allow get: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
-      allow list: if isSignedIn() && (request.query.limit <= 50) 
-                  && (request.auth.token.admin == true || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn();
       allow create: if isSignedIn() 
                     && incoming().userId == request.auth.uid
                     && incoming().status == 'pending'
