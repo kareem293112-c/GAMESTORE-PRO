@@ -405,7 +405,7 @@ export const ProductDetailPage: React.FC = () => {
             <div className="space-y-4">
               <button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || isAdded}
                 className={`relative w-full font-black py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
                   product.stock > 0
                     ? isAdded
@@ -432,22 +432,21 @@ export const ProductDetailPage: React.FC = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                {isAdded ? (
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex items-center gap-2"
-                  >
-                    <ShoppingCart className="w-6 h-6" />
-                    إتمام الشراء
-                  </motion.div>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-6 h-6" />
-                    {product.stock > 0 ? 'إضافة إلى السلة' : 'نفذت الكمية'}
-                  </>
-                )}
+                <ShoppingCart className="w-6 h-6" />
+                {isAdded ? 'تمت الإضافة بنجاح!' : (product.stock > 0 ? 'إضافة إلى السلة' : 'نفذت الكمية')}
               </button>
+
+              {isAdded && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={() => navigate('/checkout')}
+                  className="w-full font-black py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-3 active:scale-95"
+                >
+                  <ShoppingCart className="w-6 h-6" />
+                  إتمام الشراء
+                </motion.button>
+              )}
               
               <div className="pt-4 border-t border-slate-800 space-y-4">
                 <div className="flex items-center gap-3 text-xs text-slate-500">
