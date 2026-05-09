@@ -47,13 +47,15 @@ export const AdminDashboard: React.FC = () => {
   const filteredOrders = orders.filter(order => orderStatusFilter === 'all' || order.status === orderStatusFilter);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
+  const [productSearchQuery, setProductSearchQuery] = useState(''); // New name search
   const [categories, setCategories] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
     const matchesPlatform = platformFilter === '' || product.platform === platformFilter;
-    return matchesCategory && matchesPlatform;
+    const matchesName = product.name.toLowerCase().includes(productSearchQuery.toLowerCase()); // Name search logic
+    return matchesCategory && matchesPlatform && matchesName;
   });
 
 
@@ -366,6 +368,14 @@ export const AdminDashboard: React.FC = () => {
                 <span className="text-sm font-bold">تصفية حسب:</span>
               </div>
               
+              <input
+                type="text"
+                placeholder="بحث باسم المنتج..."
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 w-48"
+              />
+
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
@@ -388,11 +398,12 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </select>
 
-              {(categoryFilter || platformFilter) && (
+              {(categoryFilter || platformFilter || productSearchQuery) && (
                 <button
                   onClick={() => {
                     setCategoryFilter('');
                     setPlatformFilter('');
+                    setProductSearchQuery('');
                   }}
                   className="text-xs text-indigo-400 hover:text-indigo-300 font-bold"
                 >
