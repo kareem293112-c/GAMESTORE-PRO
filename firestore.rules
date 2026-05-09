@@ -7,7 +7,12 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
-    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isAdmin() { 
+      return isSignedIn() && (
+        (request.auth.token.email == 'karmo2931@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ); 
+    }
     function requestTime() { return request.time; }
 
     // Global Catch-All: Default Deny
@@ -26,12 +31,15 @@ service cloud.firestore {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin(); // List only for admins
       allow create: if isSignedIn() && request.auth.uid == userId 
-                    && incoming().keys().hasAll(['email', 'displayName', 'role', 'createdAt'])
-                    && incoming().keys().size() == 4
-                    && incoming().role == 'customer' // Prevent self-assignment of admin
+                    && incoming().keys().hasAll(['email', 'displayName', 'role', 'createdAt', 'balance'])
+                    && incoming().keys().size() == 5
+                    && incoming().email == request.auth.token.email
+                    && (incoming().role == 'customer' || (incoming().role == 'admin' && request.auth.token.email == 'karmo2931@gmail.com'))
+                    && incoming().balance == 0
                     && incoming().createdAt == requestTime();
       allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin())
-                    && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'balance']);
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'balance', 'role'])
+                    && (incoming().role == existing().role || isAdmin());
     }
 
     // --- Products Collection ---

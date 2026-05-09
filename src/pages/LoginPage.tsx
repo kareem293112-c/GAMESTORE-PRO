@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { AuthChrome } from '../components/auth/AuthChrome';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
+import { Chrome } from 'lucide-react';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -31,6 +34,37 @@ export const LoginPage: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user profile exists, if not create it
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        const role = user.email === 'karmo2931@gmail.com' ? 'admin' : 'customer';
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            displayName: user.displayName,
+            role: role,
+            balance: 0,
+            createdAt: serverTimestamp()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}`);
+        }
+      }
+
+      toast.success(t('auth.googleSuccess'));
+      navigate('/');
+    } catch (error) {
+      console.error(error);
+      toast.error(t('auth.googleError'));
     }
   };
 
@@ -83,6 +117,22 @@ export const LoginPage: React.FC = () => {
           )}
         </button>
       </form>
+
+      <div className="relative py-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-800"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-[#121c2f] px-2 text-slate-500">{language === 'ar' ? 'أو عبر' : 'Or via'}</span>
+        </div>
+      </div>
+
+      <button
+        onClick={signInWithGoogle}
+        className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl border border-slate-700 transition-all font-bold"
+      >
+        <Chrome className="w-4 h-4" /> {language === 'ar' ? 'جوجل' : 'Google'}
+      </button>
 
       <div className="pt-4">
         <p className="text-center text-sm text-slate-400">

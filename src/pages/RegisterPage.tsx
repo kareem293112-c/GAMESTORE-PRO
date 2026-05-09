@@ -3,7 +3,7 @@ import { AuthChrome } from '../components/auth/AuthChrome';
 import { Mail, Lock, User, UserPlus, AlertCircle, Chrome } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
@@ -58,10 +58,30 @@ export const RegisterPage: React.FC = () => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user profile exists, if not create it
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        const role = user.email === 'karmo2931@gmail.com' ? 'admin' : 'customer';
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            displayName: user.displayName,
+            role: role,
+            balance: 0,
+            createdAt: serverTimestamp()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}`);
+        }
+      }
+
       toast.success(t('auth.googleSuccess'));
       navigate('/');
     } catch (error) {
+      console.error(error);
       toast.error(t('auth.googleError'));
     }
   };

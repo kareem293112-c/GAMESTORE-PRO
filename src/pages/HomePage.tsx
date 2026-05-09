@@ -38,34 +38,34 @@ export const HomePage: React.FC = () => {
   const bannersAr = [
     {
       id: 1,
-      title: "أقوى عروض شدات ببجي",
-      subtitle: "خصم يصل إلى 20% على باقات الـ UC الكبيرة",
-      image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2000",
-      color: "from-indigo-600 to-purple-600"
+      title: "عالم الألعاب بين يديك",
+      subtitle: "استكشف أحدث الألعاب، البطاقات الرقمية، واشتراكات ترفيهية بأسعار لا تقبل المنافسة.",
+      image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=2000",
+      color: "from-indigo-900 to-purple-900"
     },
     {
       id: 2,
-      title: "اشتراكات نتفليكس وشاهد",
-      subtitle: "حسابات رسمية ومضمونة بأرخص الأسعار",
-      image: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=2000",
-      color: "from-rose-600 to-orange-600"
+      title: "عروض الموسم الحصرية",
+      subtitle: "خصومات تصل إلى 70% على أفضل العناوين العالمية لهذا الأسبوع.",
+      image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2000",
+      color: "from-blue-900 to-indigo-900"
     }
   ];
 
   const bannersEn = [
     {
       id: 1,
-      title: "Best PUBG UC Offers",
-      subtitle: "Up to 20% discount on large UC packages",
-      image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2000",
-      color: "from-indigo-600 to-purple-600"
+      title: "World of Gaming in Your Hands",
+      subtitle: "Explore the latest games, digital cards, and entertainment subscriptions at unbeatable prices.",
+      image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=2000",
+      color: "from-indigo-900 to-purple-900"
     },
     {
       id: 2,
-      title: "Netflix & Shahid Subscriptions",
-      subtitle: "Official and guaranteed accounts at the lowest prices",
-      image: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=2000",
-      color: "from-rose-600 to-orange-600"
+      title: "Exclusive Season Offers",
+      subtitle: "Up to 70% discounts on top global titles this week.",
+      image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2000",
+      color: "from-blue-900 to-indigo-900"
     }
   ];
 
@@ -73,19 +73,19 @@ export const HomePage: React.FC = () => {
 
   const categories = [
     { id: 'all', name: language === 'ar' ? 'الكل' : 'All', icon: Sparkles },
-    { id: 'قسم الهدايا', name: language === 'ar' ? 'قسم الهدايا' : 'Gifts', icon: Gift },
+    { id: 'قسم الهدايا', name: language === 'ar' ? 'قسم الهدايا' : 'Gift Cards', icon: Gift },
     { id: 'حسابات ستيم', name: language === 'ar' ? 'حسابات ستيم' : 'Steam Accounts', icon: User },
-    { id: 'أكواد ستيم', name: language === 'ar' ? 'أكواد ستيم' : 'Steam Keys', icon: Gamepad2 },
-    { id: 'حسابات مشكلة', name: language === 'ar' ? 'حسابات مشكلة' : 'Mixed Accounts', icon: MousePointer2 },
+    { id: 'أكواد ستيم', name: language === 'ar' ? 'أكواد تفعيل ستيم' : 'Steam Keys', icon: Gamepad2 },
+    { id: 'حسابات مشكلة', name: language === 'ar' ? 'حسابات مشكلة' : 'Subscriptions', icon: MousePointer2 },
   ];
 
   const filteredProducts = products.filter(product => {
-    const query = searchQuery.toLowerCase().trim();
-    const matchesSearch = !query || (
-      (product.name?.toLowerCase() || '').includes(query) ||
-      (product.description?.toLowerCase() || '').includes(query) ||
-      (product.category?.toLowerCase() || '').includes(query) ||
-      (product.platform?.toLowerCase() || '').includes(query)
+    const queryStr = searchQuery.toLowerCase().trim();
+    const matchesSearch = !queryStr || (
+      (product.name?.toLowerCase() || '').includes(queryStr) ||
+      (product.description?.toLowerCase() || '').includes(queryStr) ||
+      (product.category?.toLowerCase() || '').includes(queryStr) ||
+      (product.platform?.toLowerCase() || '').includes(queryStr)
     );
 
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
@@ -121,77 +121,87 @@ export const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-16 pb-20 overflow-hidden bg-[#0f172a]">
+    <div className="space-y-16 pb-20 overflow-hidden bg-[#0a0f1d]">
       {/* Hero Slider Section */}
-      <section className="relative h-[400px] md:h-[550px] overflow-hidden -mt-16">
+      <section className="relative h-[450px] md:h-[650px] overflow-hidden -mt-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentBanner}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
             className="absolute inset-0"
           >
-            <div className={`absolute inset-0 bg-gradient-to-l ${banners[currentBanner].color} opacity-40 mix-blend-overlay z-10`} />
+            <div className={`absolute inset-0 bg-gradient-to-l ${banners[currentBanner].color} opacity-60 mix-blend-multiply z-10`} />
             <img 
               src={banners[currentBanner].image} 
               alt={banners[currentBanner].title}
-              className="w-full h-full object-cover scale-105"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent z-20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/20 to-transparent z-20" />
             
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center text-center p-4">
-              <motion.span 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="bg-indigo-600/20 text-indigo-400 px-4 py-1 rounded-full text-xs font-bold mb-4 border border-indigo-500/20"
-              >
-                {t('banner.exclusive')}
-              </motion.span>
-              <motion.h1 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                className="text-4xl md:text-7xl font-black text-white mb-4 drop-shadow-2xl"
-              >
-                {banners[currentBanner].title}
-              </motion.h1>
-              <motion.p 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-slate-300 text-lg md:text-xl max-w-2xl"
-              >
-                {banners[currentBanner].subtitle}
-              </motion.p>
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex gap-4 mt-8"
-              >
-                <button 
-                  onClick={() => {
-                    const el = document.getElementById('products-grid');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-indigo-600/30 hover:scale-105"
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center text-center p-6 sm:p-12">
+              <div className="max-w-4xl space-y-6">
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-400 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-2 border border-indigo-500/30 backdrop-blur-md"
                 >
-                  {t('banner.shopNow')}
-                </button>
-              </motion.div>
+                  <TrendingUp className="w-4 h-4" />
+                  {t('banner.exclusive')}
+                </motion.div>
+                <motion.h1 
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.6 }}
+                  className="text-4xl md:text-8xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                >
+                  {banners[currentBanner].title}
+                </motion.h1>
+                <motion.p 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                  className="text-slate-300 text-lg md:text-2xl max-w-3xl mx-auto leading-relaxed font-medium"
+                >
+                  {banners[currentBanner].subtitle}
+                </motion.p>
+                
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
+                >
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('products-grid');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4.5 rounded-2xl font-black text-lg transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    <Gamepad2 className="w-6 h-6" />
+                    {t('banner.shopNow')}
+                  </button>
+                  <button 
+                    className="w-full sm:w-auto bg-white/5 hover:bg-white/10 backdrop-blur-xl text-white px-10 py-4.5 rounded-2xl font-black text-lg transition-all border border-white/10 hover:border-white/20"
+                  >
+                    اكتشف المزيد
+                  </button>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
         
         {/* Slider Indicators */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex gap-2">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-40 flex gap-3">
           {banners.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentBanner(idx)}
-              className={`h-1.5 rounded-full transition-all ${idx === currentBanner ? 'bg-indigo-500 w-12' : 'bg-slate-700 w-6 hover:bg-slate-500'}`}
+              className={`h-2 rounded-full transition-all duration-500 ${idx === currentBanner ? 'bg-indigo-500 w-16 shadow-[0_0_15px_rgba(99,102,241,0.8)]' : 'bg-slate-700 w-8 hover:bg-slate-500'}`}
             />
           ))}
         </div>
@@ -203,11 +213,7 @@ export const HomePage: React.FC = () => {
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => {
-                setSelectedCategory(cat.id);
-                const el = document.getElementById('products-grid');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => setSelectedCategory(cat.id)}
               className={cn(
                 "flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl font-bold transition-all border text-sm sm:text-base",
                 selectedCategory === cat.id
@@ -222,68 +228,90 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Feature Cards */}
-      <section className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+      {/* Quick Stats / Trust Section */}
+      <section className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { icon: User, label: t('features.membership'), desc: t('features.membershipDesc') },
-          { icon: Plus, label: t('features.listing'), desc: t('features.listingDesc') },
-          { icon: ShieldCheck, label: t('features.secureSell'), desc: t('features.secureSellDesc') },
-          { icon: Wallet, label: t('features.withdraw'), desc: t('features.withdrawDesc') }
-        ].map((f, i) => (
-          <div key={i} className="group p-6 bg-slate-900/50 border border-slate-800 rounded-3xl hover:border-indigo-500/30 transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <f.icon className="w-6 h-6 text-indigo-500" />
-            </div>
-            <h3 className="text-slate-100 font-bold mb-1">{f.label}</h3>
-            <p className="text-slate-500 text-xs">{f.desc}</p>
+          { label: "ألعاب أصلية", value: "100%", desc: "جميع المنتجات رسمية", color: "text-emerald-400" },
+          { label: "توصيل فوري", value: "⚡", desc: "استلم كودك في لحظات", color: "text-amber-400" },
+          { label: "دعم فني", value: "24/7", desc: "متواجدون دائماً لمساعدتك", color: "text-indigo-400" },
+          { label: "ضمان كامل", value: "Safe", desc: "حماية كاملة لمشترياتك", color: "text-rose-400" },
+        ].map((s, i) => (
+          <div key={i} className="text-center p-8 bg-slate-900/30 rounded-[2rem] border border-slate-800/40">
+            <div className={cn("text-3xl font-black mb-1", s.color)}>{s.value}</div>
+            <div className="text-slate-100 font-bold text-sm mb-1">{s.label}</div>
+            <div className="text-slate-500 text-[10px] uppercase font-black tracking-widest">{s.desc}</div>
           </div>
         ))}
       </section>
 
-      {/* Products Grid */}
-      <section id="products-grid" className="max-w-7xl mx-auto px-4 space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+      {/* Grid Header */}
+      <div className="max-w-7xl mx-auto px-4 border-b border-slate-800 pb-6">
+        <div className="flex items-end justify-between">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 text-indigo-400 text-xs font-black uppercase tracking-widest bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+              <Percent className="w-3.5 h-3.5" />
+              أفضل الأسعار
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
               {searchQuery ? (
-                language === 'ar' ? <>نتائج البحث عن: "{searchQuery}"</> : <>Search results for: "{searchQuery}"</>
+                language === 'ar' ? <>نتائج: {searchQuery}</> : <>Results: {searchQuery}</>
               ) : selectedCategory !== 'all' ? (
                 <>{categories.find(c => c.id === selectedCategory)?.name}</>
               ) : (
-                <><Sparkles className="w-6 h-6 text-yellow-400" /> {t('products.trending')}</>
+                <>اكتشف <span className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-8">الألعاب</span></>
               )}
             </h2>
-            <p className="text-slate-500 text-sm">{t('products.trendingDesc')}</p>
           </div>
-          <button className="text-indigo-400 hover:text-indigo-300 font-bold text-sm hidden sm:block">
-            {t('products.viewAll')}
-          </button>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block w-64 lg:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input 
+                type="text"
+                placeholder={t('nav.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-900/50 border border-slate-800 py-2 pl-10 pr-4 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium"
+              />
+            </div>
+            <div className="hidden lg:flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+               <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">كل الألعاب</button>
+               <button className="px-4 py-2 hover:bg-slate-800 text-slate-400 rounded-lg text-xs font-bold transition-all">الأعلى تقييماً</button>
+             </div>
+          </div>
         </div>
+      </div>
 
+      {/* Grid Content */}
+      <section id="products-grid" className="max-w-7xl mx-auto px-4 pb-20">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {Array(10).fill(0).map((_, i) => (
-              <div key={i} className="h-[280px] bg-slate-800/20 rounded-2xl animate-pulse" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
+            {Array(12).fill(0).map((_, i) => (
+              <div key={i} className="space-y-4">
+                <div className="aspect-[2/3] bg-slate-800/40 rounded-xl animate-pulse" />
+                <div className="h-4 bg-slate-800/40 rounded w-3/4 animate-pulse" />
+              </div>
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         ) : (
-          <div className="col-span-full py-20 text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800 text-slate-500">
-                <Search className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xl font-bold text-white">لم يتم العثور على نتائج</p>
-                <p className="text-slate-500 text-sm">جرّب كلمات بحث أخرى</p>
-              </div>
+          <div className="col-span-full py-20 text-center space-y-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-900 text-slate-700 border border-slate-800">
+              <Search className="w-10 h-10" />
             </div>
-          )}
+            <div className="space-y-2">
+              <p className="text-2xl font-black text-white">{t('products.noResults')}</p>
+              <p className="text-slate-500">{t('products.tryAgain')}</p>
+            </div>
+          </div>
+        )}
       </section>
+
       <WhatsAppButton />
     </div>
   );

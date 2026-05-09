@@ -7,14 +7,15 @@ import {
   Linkedin, 
   Youtube, 
   Mail, 
-  Phone, 
-  MapPin, 
   ShieldCheck, 
   Zap, 
-  UserPlus, 
   Store,
   CreditCard,
-  MessageCircle
+  MessageCircle,
+  Gamepad2,
+  ShoppingCart,
+  Clock,
+  Tag
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'motion/react';
@@ -29,68 +30,68 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-16 border-b border-slate-800">
           <motion.div 
             whileHover={{ y: -5 }}
-            className="flex items-center gap-4 group"
+            className="flex items-center gap-4 group bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 hover:border-indigo-500/30 transition-all duration-300"
           >
-            <div className="w-14 h-14 bg-indigo-600/10 text-indigo-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-              <UserPlus className="w-7 h-7" />
+            <div className="w-14 h-14 bg-indigo-600/10 text-indigo-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.1)]">
+              <Gamepad2 className="w-7 h-7" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'إنشاء عضوية' : 'Create Account'}</h4>
+              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'ألعاب رقمية مميزة' : 'Premium Digital Games'}</h4>
               <p className="text-slate-400 text-sm mt-1 leading-relaxed">
                 {language === 'ar' 
-                  ? 'انضم إلى موقعنا واستفد من مزايا التسوق الآمن والسهل.' 
-                  : 'Join our store and enjoy the benefits of safe and easy shopping.'}
+                  ? 'تصفح أحدث وأقوى الألعاب الرقمية داخل متجر منظم وسريع.' 
+                  : 'Browse the latest and greatest digital games in an organized and fast store.'}
               </p>
             </div>
           </motion.div>
 
           <motion.div 
             whileHover={{ y: -5 }}
-            className="flex items-center gap-4 group"
+            className="flex items-center gap-4 group bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300"
           >
-            <div className="w-14 h-14 bg-emerald-600/10 text-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-              <PlusSquareIcon className="w-7 h-7" />
+            <div className="w-14 h-14 bg-emerald-600/10 text-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+              <ShoppingCart className="w-7 h-7" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'إضافة قائمة' : 'Add Listing'}</h4>
+              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'تجربة شراء سلسة' : 'Seamless Shopping'}</h4>
               <p className="text-slate-400 text-sm mt-1 leading-relaxed">
                 {language === 'ar'
-                  ? 'اعرض أغراضك وحسابك للبيع في سوق اللاعبين عن طريق إنشاء إعلان.'
-                  : 'List your items and accounts for sale in the players market by creating an ad.'}
+                  ? 'واجهة سهلة وسريعة تساعد المستخدم يوصل للعبة المطلوبة مباشرة.'
+                  : 'A simple and fast interface that helps users reach their desired games directly.'}
               </p>
             </div>
           </motion.div>
 
           <motion.div 
             whileHover={{ y: -5 }}
-            className="flex items-center gap-4 group"
+            className="flex items-center gap-4 group bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 hover:border-amber-500/30 transition-all duration-300"
           >
-            <div className="w-14 h-14 bg-amber-600/10 text-amber-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
-              <ShieldCheck className="w-7 h-7" />
+            <div className="w-14 h-14 bg-amber-600/10 text-amber-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+              <Zap className="w-7 h-7" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'بيع آمن' : 'Secure Selling'}</h4>
+              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'تفعيل وتسليم فوري' : 'Instant Activation'}</h4>
               <p className="text-slate-400 text-sm mt-1 leading-relaxed">
                 {language === 'ar'
-                  ? 'تواصل مع العملاء وبع منتجك بكل أمان عبر منصتنا الموثوقة.'
-                  : 'Connect with customers and sell your products securely via our trusted platform.'}
+                  ? 'استلم المفتاح أو المنتج الرقمي فور انتهاء عملية الدفع.'
+                  : 'Receive your digital key or product immediately after payment completion.'}
               </p>
             </div>
           </motion.div>
 
           <motion.div 
             whileHover={{ y: -5 }}
-            className="flex items-center gap-4 group"
+            className="flex items-center gap-4 group bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 hover:border-rose-500/30 transition-all duration-300"
           >
-            <div className="w-14 h-14 bg-rose-600/10 text-rose-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300">
-              <CreditCard className="w-7 h-7" />
+            <div className="w-14 h-14 bg-rose-600/10 text-rose-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+              <Tag className="w-7 h-7" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'سحب الأموال' : 'Withdraw Funds'}</h4>
+              <h4 className="text-white font-bold text-lg">{language === 'ar' ? 'أسعار منافسة' : 'Competitive Prices'}</h4>
               <p className="text-slate-400 text-sm mt-1 leading-relaxed">
                 {language === 'ar'
-                  ? 'سجل حسابك المصرفي وابدأ في جني أرباحك من مبيعاتك اليوم.'
-                  : 'Register your bank account and start earning from your sales today.'}
+                  ? 'نوفر أفضل الأسعار والعروض على مجموعة كبيرة من الألعاب.'
+                  : 'We provide the best prices and offers on a wide range of games.'}
               </p>
             </div>
           </motion.div>
