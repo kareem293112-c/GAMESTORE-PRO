@@ -23,7 +23,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
-  const { user, profile, loading, isAdmin } = useAuth();
+  const { user, profile, loading, isAdmin, isProductManager, isOrderManager } = useAuth();
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
@@ -35,7 +35,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     if (adminOnly) return <Navigate to="/" />;
     return <Navigate to="/login" />;
   }
-  if (adminOnly && !isAdmin) return <Navigate to="/" />;
+  if (adminOnly && !isAdmin && !isProductManager && !isOrderManager) return <Navigate to="/" />;
 
   return <>{children}</>;
 };
