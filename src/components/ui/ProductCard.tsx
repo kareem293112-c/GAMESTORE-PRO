@@ -130,43 +130,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </Link>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800/50 flex items-end justify-between">
-            <div className="flex flex-col">
-              {product.discount > 0 && (
-                <span className="text-[11px] text-slate-500 line-through mb-[-2px]">
-                  {formatPrice(product.price)}
+          <div className="mt-4 pt-3 border-t border-slate-800/50 flex flex-col gap-3">
+            {/* Low Stock Indicator inside the card */}
+            {product.stock > 0 && product.stock < 10 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[9px] font-bold">
+                  <span className="text-amber-400 flex items-center gap-1">
+                    <Zap className="w-2.5 h-2.5" /> مخزون منخفض
+                  </span>
+                  <span className="text-slate-500">{product.stock} متبقي</span>
+                </div>
+                <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
+                    style={{ width: `${(product.stock / 10) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-end justify-between">
+              <div className="flex flex-col">
+                {product.discount > 0 && (
+                  <span className="text-[11px] text-slate-500 line-through mb-[-2px]">
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+                <span className="text-lg font-black text-white tracking-tight">
+                  {formatPrice(discountedPrice)}
                 </span>
-              )}
-              <span className="text-lg font-black text-white tracking-tight">
-                {formatPrice(discountedPrice)}
-              </span>
+              </div>
             </div>
           </div>
         </div>
-      </motion.div>
-      
-      {product.stock > 0 && product.stock < 10 && (
-        <div className="mt-2 px-2">
-          <div className="flex items-center justify-between mb-1 text-[10px]">
-            <span className="text-amber-400 font-bold flex items-center gap-1">
-              <Zap className="w-3 h-3" /> مخزون منخفض
-            </span>
-            <span className="text-slate-500 font-bold">{product.stock} متبقي</span>
-          </div>
-          <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_2px_rgba(245,158,11,0.6)]`} 
-              style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
 
-      <QuickViewModal 
-        product={product} 
-        isOpen={isQuickViewOpen} 
-        onClose={() => setIsQuickViewOpen(false)} 
-      />
+        <QuickViewModal 
+          product={product} 
+          isOpen={isQuickViewOpen} 
+          onClose={() => setIsQuickViewOpen(false)} 
+        />
+      </motion.div>
     </>
   );
 };
