@@ -60,6 +60,10 @@ const translations = {
     'activity.fallbackUser': 'عميل محترم',
     'activity.fallbackProduct': 'منتج مميز',
     'activity.purchased': 'قام بشراء',
+    'footer.links.about': 'من نحن',
+    'footer.links.delivery': 'شروط التوصيل والإرجاع',
+    'footer.links.privacy': 'سياسة الخصوصية',
+    'footer.links.distance': 'اتفاقية البيع عن بعد',
   },
   en: {
     'nav.home': 'Home',
@@ -110,6 +114,10 @@ const translations = {
     'activity.fallbackUser': 'Valued Customer',
     'activity.fallbackProduct': 'Featured Product',
     'activity.purchased': 'purchased',
+    'footer.links.about': 'About Us',
+    'footer.links.delivery': 'Delivery & Returns',
+    'footer.links.privacy': 'Privacy Policy',
+    'footer.links.distance': 'Distance Sales Agreement',
   }
 };
 

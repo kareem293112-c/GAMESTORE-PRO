@@ -138,10 +138,10 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-white font-bold mb-6 text-lg">{t('footer.information')}</h4>
             <ul className="space-y-4 text-sm">
-              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
-              <li><Link to="/security" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'نظام تسوق آمن' : 'Secure Shopping'}</Link></li>
-              <li><Link to="/terms" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'اتفاقية العضوية' : 'Membership Agreement'}</Link></li>
-              <li><Link to="/usage" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'شروط الاستخدام' : 'Terms of Use'}</Link></li>
+              <li><Link to="/about" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.about')}</Link></li>
+              <li><Link to="/delivery" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.delivery')}</Link></li>
+              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.privacy')}</Link></li>
+              <li><Link to="/distance-sales" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.distance')}</Link></li>
               <li><Link to="/support" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'الدعم الفني' : 'Technical Support'}</Link></li>
             </ul>
           </div>
@@ -177,18 +177,12 @@ export const Footer: React.FC = () => {
           <p className="text-slate-500 text-sm text-center md:text-start px-2">
             {t('footer.rights')}
           </p>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <div className="w-12 h-7 bg-white rounded-md flex items-center justify-center p-1">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-full" />
-              </div>
-              <div className="w-12 h-7 bg-white rounded-md flex items-center justify-center p-1">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-full" />
-              </div>
-              <div className="w-12 h-7 bg-white rounded-md flex items-center justify-center p-1">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-full" />
-              </div>
-            </div>
+          <div className="flex items-center gap-4 font-mono">
+            <img 
+              src="https://github.com/kareem293112-c/GAMESTORE-PRO/blob/main/logo_band_colored@1X.png?raw=true" 
+              alt="Payment Methods" 
+              className="h-8 w-auto" 
+            />
           </div>
         </div>
       </div>

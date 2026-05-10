@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Shield, Lock, Eye, FileText, Globe } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const PrivacyPage: React.FC = () => {
+  const { language } = useLanguage();
   return (
     <div className="min-h-screen bg-[#0f172a] pt-24 pb-20 px-4" dir="rtl">
       <div className="max-w-4xl mx-auto">
@@ -15,7 +17,9 @@ export const PrivacyPage: React.FC = () => {
             <div className="bg-indigo-600/20 p-3 rounded-2xl">
               <Eye className="w-8 h-8 text-indigo-500" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white">سياسة الخصوصية</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-white">
+              {language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
+            </h1>
           </div>
 
           <div className="space-y-8 text-slate-300 leading-relaxed">

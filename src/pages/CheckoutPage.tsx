@@ -245,11 +245,18 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-4 bg-emerald-600/10 border border-emerald-500/20 rounded-2xl">
-              <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
-              <p className="text-xs text-slate-400 leading-relaxed">
-                يتم الدفع بشكل آمن وسريع عبر محفظتك الإلكترونية الخاصة بالمنصة.
-              </p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-4 p-4 bg-emerald-600/10 border border-emerald-500/20 rounded-2xl w-full">
+                <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  يتم الدفع بشكل آمن وسريع عبر محفظتك الإلكترونية الخاصة بالمنصة.
+                </p>
+              </div>
+              <img 
+                src="https://github.com/kareem293112-c/GAMESTORE-PRO/blob/main/logo_band_colored@1X.png?raw=true" 
+                alt="Payment Methods" 
+                className="h-6 w-auto opacity-80" 
+              />
             </div>
 
             <button

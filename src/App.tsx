@@ -17,6 +17,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { AboutUsPage } from './pages/AboutUsPage';
+import { DeliveryPage } from './pages/DeliveryPage';
+import { DistanceSalesPage } from './pages/DistanceSalesPage';
 import { SecurityPage } from './pages/SecurityPage';
 import { TermsPage } from './pages/TermsPage';
 import { SupportPage } from './pages/SupportPage';
@@ -69,6 +72,9 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/delivery" element={<DeliveryPage />} />
+          <Route path="/distance-sales" element={<DistanceSalesPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/security" element={<SecurityPage />} />
           <Route path="/terms" element={<TermsPage />} />
