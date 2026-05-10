@@ -179,9 +179,10 @@ export const Footer: React.FC = () => {
           </p>
           <div className="flex items-center gap-4 font-mono">
             <img 
-              src="https://github.com/kareem293112-c/GAMESTORE-PRO/blob/main/logo_band_colored@1X.png?raw=true" 
+              src="https://raw.githubusercontent.com/kareem293112-c/GAMESTORE-PRO/main/logo_band_colored@1X.png" 
               alt="Payment Methods" 
               className="h-8 w-auto" 
+              referrerPolicy="no-referrer"
             />
           </div>
         </div>

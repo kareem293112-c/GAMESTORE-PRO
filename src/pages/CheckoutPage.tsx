@@ -253,9 +253,10 @@ export const CheckoutPage: React.FC = () => {
                 </p>
               </div>
               <img 
-                src="https://github.com/kareem293112-c/GAMESTORE-PRO/blob/main/logo_band_colored@1X.png?raw=true" 
+                src="https://raw.githubusercontent.com/kareem293112-c/GAMESTORE-PRO/main/logo_band_colored@1X.png" 
                 alt="Payment Methods" 
                 className="h-6 w-auto opacity-80" 
+                referrerPolicy="no-referrer"
               />
             </div>
 
