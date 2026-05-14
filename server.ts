@@ -1,7 +1,5 @@
 import express from 'express';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createServer as createViteServer } from 'vite';
 import crypto from 'node:crypto';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
@@ -12,13 +10,14 @@ import cors from 'cors';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// الحل الآمن والنهائي لتعريف المسار الحالي في جميع بيئات Node.js وسيرفرات الـ Build
+const currentDir = process.cwd();
 
 // Load Firebase Config
 let firebaseConfig: any = {};
 try {
-  const configPath = path.resolve(__dirname, 'firebase-applet-config.json');
+  // استخدام المسار الجذري الفعلي للمشروع لتجنب الـ undefined نهائياً
+  const configPath = path.join(currentDir, 'firebase-applet-config.json');
     
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
