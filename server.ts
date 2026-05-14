@@ -1,23 +1,20 @@
 import express from 'express';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createServer as createViteServer } from 'vite';
 import crypto from 'node:crypto';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-const configPath = path.join(currentDir, 'firebase-applet-config.json');
-
+import fs from 'node:fs';
 import helmet from 'helmet';
 import cors from 'cors';
 
 dotenv.config();
 
-const currentDir = process.cwd();
 // Load Firebase Config
 let firebaseConfig: any = {};
 try {
-  const configPath = path.resolve(__dirname, 'firebase-applet-config.json');
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
     
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -65,7 +62,13 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // 1. Security Headers (Helmet + Manual)
+  // 1. Core Config & Security
+  app.disable('x-powered-by');
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // 2. Security Headers (Helmet)
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -74,23 +77,17 @@ async function startServer() {
         "connect-src": ["'self'", "https://*.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.google-analytics.com"],
         "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://raw.githubusercontent.com", "https://github.com"],
         "frame-src": ["'self'", "https://*.firebaseapp.com"],
+        "frame-ancestors": ["'self'", "https://ai.studio", "https://*.google.com"],
       },
-    }
+    },
+    xFrameOptions: false, // Managed by CSP frame-ancestors for modern browsers
   }));
 
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    // Security by obscurity
-    res.removeHeader('X-Powered-By');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     next();
   });
-
-  app.disable('x-powered-by');
-  app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
 
   // Middleware to verify Firebase Auth token
   const verifyToken = async (req: any, res: any, next: any) => {
@@ -532,9 +529,8 @@ async function startServer() {
   } else {
     console.log('Starting in production mode...');
     
-    // Check multiple potential dist paths
+    // Check multiple potential dist paths (Render/deployment flexibility)
     const possibleDistPaths = [
-      path.resolve(__dirname, 'dist'),
       path.resolve(process.cwd(), 'dist'),
       path.resolve(process.cwd(), 'src', 'dist')
     ];
