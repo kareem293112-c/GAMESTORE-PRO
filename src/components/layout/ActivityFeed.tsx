@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, CheckCircle } from 'lucide-react';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db } from '../../pages/firebase';
 
 interface Activity {
   id: string;

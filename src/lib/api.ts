@@ -1,4 +1,4 @@
-import { auth } from './firebase';
+import { auth } from '../pages/firebase';
 
 export async function callApi(path: string, options: RequestInit = {}) {
   const user = auth.currentUser;
