@@ -75,11 +75,17 @@ function getDbAdmin() {
       }
       
       const adminApp = admin.apps[0];
+      console.log('Firebase Admin App retrieved. Project ID:', adminApp.options.projectId);
+      
       db_admin = firebaseConfig.firestoreDatabaseId 
         ? getFirestore(adminApp, firebaseConfig.firestoreDatabaseId)
         : getFirestore(adminApp);
         
-      console.log('Firestore Admin initialized successfully');
+      if (db_admin) {
+        console.log('Firestore Admin instance created successfully');
+      } else {
+        console.error('Firestore Admin instance creation failed (returned null/undefined)');
+      }
       return db_admin;
     } catch (error) {
       console.error('Firebase Admin getDbAdmin error:', error);
@@ -99,6 +105,12 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Request logging
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
 
   console.log('Firebase Project ID:', firebaseConfig.projectId);
   // Admin SDK will be initialized by the first call to getDbAdmin() or verifyToken/verifyAdmin
@@ -152,14 +164,31 @@ async function startServer() {
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
 
     try {
+      // Hardcoded superadmin bypass for the main developer email
+      if (req.user.email === 'karmo2931@gmail.com') {
+        console.log('Superadmin email detected, bypassing role check');
+        return next();
+      }
+
       const userDoc = await db.collection('users').doc(req.user.uid).get();
       const userData = userDoc.data();
-      if (userData?.isAdmin || userData?.isProductManager || userData?.isOrderManager) {
+      
+      const hasPermission = 
+        userData?.isAdmin === true || 
+        userData?.isProductManager === true || 
+        userData?.isOrderManager === true ||
+        userData?.role === 'admin' ||
+        userData?.role === 'productManager' ||
+        userData?.role === 'orderManager';
+
+      if (hasPermission) {
         next();
       } else {
+        console.warn(`User ${req.user.email} attempted unauthorized access. Role: ${userData?.role}`);
         res.status(403).json({ error: 'Not authorized' });
       }
     } catch (error) {
+      console.error('Auth check error:', error);
       res.status(500).json({ error: 'Auth check failed' });
     }
   };
@@ -343,13 +372,16 @@ async function startServer() {
 
     try {
       const product = req.body;
+      console.log('Creating new product:', product.name);
       const docRef = await db.collection('products').add({
         ...product,
         createdAt: FieldValue.serverTimestamp(),
       });
+      console.log('Product created successfully with ID:', docRef.id);
       res.status(201).json({ id: docRef.id });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create product' });
+    } catch (error: any) {
+      console.error('Create Product Error:', error.message);
+      res.status(500).json({ error: 'Failed to create product', details: error.message });
     }
   });
 
@@ -358,13 +390,16 @@ async function startServer() {
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
 
     try {
+      console.log('Updating product:', req.params.id);
       await db.collection('products').doc(req.params.id).update({
         ...req.body,
         updatedAt: FieldValue.serverTimestamp(),
       });
+      console.log('Product updated successfully');
       res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to update product' });
+    } catch (error: any) {
+      console.error('Update Product Error:', error.message);
+      res.status(500).json({ error: 'Failed to update product', details: error.message });
     }
   });
 

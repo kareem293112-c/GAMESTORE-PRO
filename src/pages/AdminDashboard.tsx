@@ -217,8 +217,10 @@ export const AdminDashboard: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleSave initiated with product:', currentProduct);
     try {
       if (currentProduct.id) {
+        console.log('Updating existing product...');
         const { id, ...data } = currentProduct;
         await callApi(`/api/products/${id}`, {
           method: 'PUT',
@@ -226,16 +228,19 @@ export const AdminDashboard: React.FC = () => {
         });
         toast.success('تم تحديث المنتج');
       } else {
+        console.log('Adding new product...');
         await callApi('/api/products', {
           method: 'POST',
           body: JSON.stringify(currentProduct)
         });
         toast.success('تم إضافة المنتج');
       }
+      console.log('Save operation successful');
       setIsModalOpen(false);
       fetchProducts();
-    } catch (error) {
-      toast.error('حدث خطأ أثناء الحفظ');
+    } catch (error: any) {
+      console.error('Save error details:', error);
+      toast.error(`حدث خطأ أثناء الحفظ: ${error.message || ''}`);
     }
   };
 
