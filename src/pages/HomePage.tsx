@@ -94,14 +94,11 @@ export const HomePage: React.FC = () => {
   });
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsData = async () => {
       try {
-        const q = query(collection(db, 'products'), limit(50));
-        const querySnapshot = await getDocs(q);
-        const productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Product[];
+        const response = await fetch('/api/products');
+        if (!response.ok) throw new Error('Failed to fetch products');
+        const productsData = await response.json() as Product[];
         
         // Use fallback if empty
         if (productsData.length === 0) {
@@ -117,7 +114,7 @@ export const HomePage: React.FC = () => {
       }
     };
 
-    fetchProducts();
+    fetchProductsData();
   }, []);
 
   return (

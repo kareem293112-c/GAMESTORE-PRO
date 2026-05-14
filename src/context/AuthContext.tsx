@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -39,20 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         const docRef = doc(db, 'users', firebaseUser.uid);
         
-        unsubscribeProfile = onSnapshot(docRef, async (docSnap) => {
+        unsubscribeProfile = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
             setProfile({ uid: firebaseUser.uid, ...docSnap.data() } as UserProfile);
-          } else {
-            // Auto-create profile if missing
-            const newProfile: any = {
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
-              role: firebaseUser.email === 'karmo2931@gmail.com' ? 'admin' : 'customer',
-              balance: 0,
-              createdAt: serverTimestamp()
-            };
-            await setDoc(docRef, newProfile);
-            // Profile will be updated by the next snapshot
           }
         }, (error) => {
           console.error("Error in profile snapshot:", error);
