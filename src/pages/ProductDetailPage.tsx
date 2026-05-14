@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Product, Review } from '../types';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { Product, Review, OperationType } from '../types';
 import { SAMPLE_PRODUCTS } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +10,6 @@ import { formatPrice } from '../lib/utils';
 import { ShoppingCart, Star, ShieldCheck, Zap, ArrowRight, Monitor, Globe, Clock, Cpu, HardDrive, Cpu as Gpu, Layout, Calendar, Briefcase, Languages, Send, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { callApi } from '../lib/api';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,17 @@ export const ProductDetailPage: React.FC = () => {
   const { addToCart } = useCart();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+
+  const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+    const errInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: { userId: user?.uid, email: user?.email },
+      operationType,
+      path
+    };
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     if (product) {
@@ -49,13 +61,13 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchProductData = async () => {
+    const fetchProduct = async () => {
       if (!id) return;
       try {
-        const response = await fetch(`/api/products/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProduct(data as Product);
+        const docRef = doc(db, 'products', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
         } else {
           // Fallback to sample products for demo
           const sample = SAMPLE_PRODUCTS.find(p => p.id === id);
@@ -77,27 +89,42 @@ export const ProductDetailPage: React.FC = () => {
     const checkPurchaseStatus = async () => {
       if (!user || !id) return;
       try {
-        const data = await callApi(`/api/me/purchases/${id}`);
-        setHasPurchased(data.hasPurchased);
+        const q = query(
+          collection(db, 'orders'),
+          where('userId', '==', user.uid),
+          where('status', '==', 'completed')
+        );
+        const querySnapshot = await getDocs(q);
+        const hasBought = querySnapshot.docs.some(doc => {
+          const orderData = doc.data();
+          return orderData.items?.some((item: any) => item.id === id);
+        });
+        setHasPurchased(hasBought);
       } catch (error) {
         console.error('Error checking purchase status:', error);
       }
     };
 
-    fetchProductData();
-    fetchReviewsData();
+    fetchProduct();
+    fetchReviews();
     checkPurchaseStatus();
     window.scrollTo(0, 0);
   }, [id, navigate, user]);
 
-  const fetchReviewsData = async () => {
+  const fetchReviews = async () => {
     if (!id) return;
     try {
-      const response = await fetch(`/api/products/${id}/reviews`);
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data);
-      }
+      const q = query(
+        collection(db, 'reviews'),
+        where('productId', '==', id),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const reviewsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Review[];
+      setReviews(reviewsData);
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
@@ -116,21 +143,22 @@ export const ProductDetailPage: React.FC = () => {
     }
 
     setSubmittingReview(true);
+    const path = 'reviews';
     try {
-      await callApi(`/api/products/${id}/reviews`, {
-        method: 'POST',
-        body: JSON.stringify({
-          userName: profile?.displayName || user.email?.split('@')[0] || 'مستخدم',
-          rating: newReview.rating,
-          comment: newReview.comment,
-        })
+      await addDoc(collection(db, path), {
+        productId: id,
+        userId: user.uid,
+        userName: profile?.displayName || user.email?.split('@')[0] || 'مستخدم',
+        rating: newReview.rating,
+        comment: newReview.comment,
+        createdAt: serverTimestamp()
       });
 
       setNewReview({ rating: 5, comment: '' });
       toast.success('تمت إضافة التقييم بنجاح');
-      fetchReviewsData();
+      fetchReviews();
     } catch (error) {
-      toast.error('فشل إضافة التقييم');
+      handleFirestoreError(error, OperationType.WRITE, path);
     } finally {
       setSubmittingReview(false);
     }

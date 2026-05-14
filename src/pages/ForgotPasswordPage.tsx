@@ -3,7 +3,7 @@ import { AuthChrome } from '../components/auth/AuthChrome';
 import { Mail, ArrowRight, Send, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Order } from '../types';
 import { User, Package, Calendar, Clock, CreditCard, Loader2 } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { callApi } from '../lib/api';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const DashboardPage: React.FC = () => {
   const { profile, user } = useAuth();
@@ -14,18 +16,22 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const fetchOrders = async () => {
-      try {
-        const data = await callApi('/api/me/orders');
-        setOrders(data);
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchOrders();
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Order[];
+      setOrders(data);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'orders');
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return (

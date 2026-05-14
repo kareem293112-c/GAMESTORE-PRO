@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product, Review } from '../types';
 import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter, CreditCard } from 'lucide-react';
@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { refundOrder } from '../lib/orders';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
-import { callApi } from '../lib/api';
 
 export const AdminDashboard: React.FC = () => {
   const { user, isAdmin, isProductManager, isOrderManager, loading: authLoading } = useAuth();
@@ -126,30 +125,40 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const data = await callApi('/api/products');
+      const querySnapshot = await getDocs(collection(db, 'products'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
       setProducts(data);
       
-      const uniqueCategories = Array.from(new Set(data.map((p: any) => p.category))).filter(Boolean) as string[];
-      const uniquePlatforms = Array.from(new Set(data.map((p: any) => p.platform))).filter(Boolean) as string[];
+      const uniqueCategories = Array.from(new Set(data.map(p => p.category))).filter(Boolean);
+      const uniquePlatforms = Array.from(new Set(data.map(p => p.platform))).filter(Boolean);
       setCategories(uniqueCategories);
       setPlatforms(uniquePlatforms);
     } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'products');
       toast.error('حدث خطأ أثناء تحميل المنتجات');
     }
   };
 
   const fetchOrders = async () => {
     try {
-      const data = await callApi('/api/orders');
+      const querySnapshot = await getDocs(collection(db, 'orders'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(data);
     } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'orders');
       console.error(error);
     }
   };
 
   const fetchUsers = async () => {
     try {
-      const data = await callApi('/api/users');
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const data = querySnapshot.docs.map(doc => ({ 
+        uid: doc.id, 
+        ...doc.data(),
+        balance: doc.data().balance || 0,
+        role: doc.data().role || 'customer'
+      }));
       setUsersList(data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -158,9 +167,11 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchReviews = async () => {
     try {
-      const data = await callApi('/api/reviews');
+      const querySnapshot = await getDocs(collection(db, 'reviews'));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Review[];
       setReviews(data);
     } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'reviews');
       toast.error('حدث خطأ أثناء تحميل التقييمات');
     }
   };
@@ -172,16 +183,18 @@ export const AdminDashboard: React.FC = () => {
     }
 
     try {
-      await callApi(`/api/users/${userId}/balance`, {
-        method: 'PUT',
-        body: JSON.stringify({ balance: Number(newBalance) })
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, { 
+        balance: Number(newBalance),
+        updatedAt: serverTimestamp()
       });
       toast.success('تم تحديث الرصيد بنجاح');
       setWalletModal(null);
       fetchUsers();
     } catch (error: any) {
       console.error("Wallet update error:", error);
-      toast.error('حدث خطأ أثناء تحديث الرصيد');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
+      toast.error('حدث خطأ أثناء تحديث الرصيد: ' + (error.message || 'خطأ غير معروف'));
     }
   };
 
@@ -190,18 +203,16 @@ export const AdminDashboard: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, status: string, deliveryInfo?: string) => {
     try {
-      const updateData: any = { status };
+      const updateData: any = { status, updatedAt: new Date().toISOString() };
       if (deliveryInfo !== undefined) {
         updateData.deliveryInfo = deliveryInfo;
       }
-      await callApi(`/api/orders/${orderId}`, {
-        method: 'PUT',
-        body: JSON.stringify(updateData)
-      });
+      await updateDoc(doc(db, 'orders', orderId), { ...updateData, updatedAt: serverTimestamp() });
       toast.success('تم تحديث الطلب');
       fetchOrders();
       setEditingDelivery(null);
     } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
       toast.error('فشل تحديث الطلب');
     }
   };
@@ -217,67 +228,64 @@ export const AdminDashboard: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handleSave initiated with product:', currentProduct);
     try {
       if (currentProduct.id) {
-        console.log('Updating existing product...');
         const { id, ...data } = currentProduct;
-        await callApi(`/api/products/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data)
-        });
+        try {
+          await updateDoc(doc(db, 'products', id as string), data);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `products/${id}`);
+        }
         toast.success('تم تحديث المنتج');
       } else {
-        console.log('Adding new product...');
-        await callApi('/api/products', {
-          method: 'POST',
-          body: JSON.stringify(currentProduct)
-        });
+        try {
+          await addDoc(collection(db, 'products'), {
+            ...currentProduct,
+            createdAt: new Date().toISOString()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, 'products');
+        }
         toast.success('تم إضافة المنتج');
       }
-      console.log('Save operation successful');
       setIsModalOpen(false);
       fetchProducts();
-    } catch (error: any) {
-      console.error('Save error details:', error);
-      toast.error(`حدث خطأ أثناء الحفظ: ${error.message || ''}`);
+    } catch (error) {
+      toast.error('حدث خطأ أثناء الحفظ');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await callApi(`/api/products/${id}`, {
-        method: 'DELETE'
-      });
+      await deleteDoc(doc(db, 'products', id));
       toast.success('تم الحذف بنجاح');
       fetchProducts();
       setDeleteConfirm(null);
     } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
       toast.error('خطأ في الحذف');
     }
   };
 
   const handleDeleteOrder = async (id: string) => {
     try {
-      await callApi(`/api/orders/${id}`, {
-        method: 'DELETE'
-      });
+      await deleteDoc(doc(db, 'orders', id));
       toast.success('تم حذف الطلب بنجاح');
       fetchOrders();
       setDeleteConfirm(null);
     } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `orders/${id}`);
       toast.error('حدث خطأ أثناء حذف الطلب');
     }
   };
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
-      await callApi(`/api/reviews/${reviewId}`, {
-        method: 'DELETE'
-      });
+      await deleteDoc(doc(db, 'reviews', reviewId));
       toast.success('تم حذف التقييم');
       fetchReviews();
     } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `reviews/${reviewId}`);
       toast.error('حدث خطأ أثناء حذف التقييم');
     }
   };

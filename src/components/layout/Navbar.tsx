@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useSearch } from '../../context/SearchContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { auth } from '../../pages/firebase';
+import { auth } from '../../lib/firebase';
 import { cn, formatPrice } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Languages } from 'lucide-react';

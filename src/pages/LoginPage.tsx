@@ -3,10 +3,11 @@ import { AuthChrome } from '../components/auth/AuthChrome';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
 import { Chrome } from 'lucide-react';
-import { callApi } from '../lib/api';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 import { useLanguage } from '../context/LanguageContext';
 
@@ -42,14 +43,21 @@ export const LoginPage: React.FC = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Ensure user profile exists via backend API
-      try {
-        await callApi('/api/me/profile', {
-          method: 'POST',
-          body: JSON.stringify({ displayName: user.displayName })
-        });
-      } catch (e) {
-        console.error("Profile sync error:", e);
+      // Check if user profile exists, if not create it
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        const role = user.email === 'karmo2931@gmail.com' ? 'admin' : 'customer';
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            displayName: user.displayName,
+            role: role,
+            balance: 0,
+            createdAt: serverTimestamp()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}`);
+        }
       }
 
       toast.success(t('auth.googleSuccess'));

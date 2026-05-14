@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '../lib/firebase';
 import { Product } from '../types';
 import { SAMPLE_PRODUCTS } from '../constants';
 import { ProductCard } from '../components/ui/ProductCard';
@@ -94,11 +94,14 @@ export const HomePage: React.FC = () => {
   });
 
   useEffect(() => {
-    const fetchProductsData = async () => {
+    const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products');
-        if (!response.ok) throw new Error('Failed to fetch products');
-        const productsData = await response.json() as Product[];
+        const q = query(collection(db, 'products'), limit(50));
+        const querySnapshot = await getDocs(q);
+        const productsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Product[];
         
         // Use fallback if empty
         if (productsData.length === 0) {
@@ -114,7 +117,7 @@ export const HomePage: React.FC = () => {
       }
     };
 
-    fetchProductsData();
+    fetchProducts();
   }, []);
 
   return (

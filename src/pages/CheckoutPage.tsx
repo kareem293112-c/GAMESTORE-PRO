@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../lib/firebase';
+import { collection, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { formatPrice } from '../lib/utils';
-import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
+import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { callApi } from '../lib/api';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const CheckoutPage: React.FC = () => {
   const { items, total, clearCart } = useCart();
@@ -20,6 +22,9 @@ export const CheckoutPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: profile?.displayName || '',
     email: user?.email || '',
+    cardNum: '',
+    expiry: '',
+    cvv: ''
   });
 
   const handleCheckout = async (e: React.FormEvent) => {
@@ -28,23 +33,67 @@ export const CheckoutPage: React.FC = () => {
     
     setLoading(true);
     try {
-      await callApi('/api/orders', {
-        method: 'POST',
-        body: JSON.stringify({
-          items,
-          total,
-          customerEmail: formData.email,
-          customerName: formData.name
-        })
+      const orderId = `ORD-${Date.now()}`;
+
+      // Run Transaction to ensure atomic operations (stock check & balance deduction)
+      await runTransaction(db, async (transaction) => {
+        // 1. Read necessary documents
+        const userDocRef = doc(db, 'users', user!.uid);
+        const userDoc = await transaction.get(userDocRef);
+        const userData = userDoc.data();
+        
+        if (!userData) throw new Error('User not found');
+        
+        const balance = userData.balance || 0;
+        if (balance < total) {
+          throw new Error('insufficient_balance');
+        }
+
+        // 2. Check stock for each item
+        const productRefs = items.map(item => doc(db, 'products', item.productId));
+        const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+        for (let i = 0; i < productDocs.length; i++) {
+            const product = productDocs[i].data();
+            if (!product) throw new Error(`Product ${items[i].name} not found`);
+            if (product.stock < items[i].quantity) {
+                throw new Error(`insufficient_stock_${items[i].name}`);
+            }
+        }
+
+        // 3. Update Balance
+        transaction.update(userDocRef, {
+            balance: balance - total,
+            updatedAt: serverTimestamp()
+        });
+
+        // 4. Update Stock
+        productRefs.forEach((ref, i) => {
+           transaction.update(ref, {
+               stock: productDocs[i].data()!.stock - items[i].quantity
+           });
+        });
+
+        // 5. Create Order
+        transaction.set(doc(db, 'orders', orderId), {
+            userId: user?.uid,
+            items,
+            total,
+            status: 'pending',
+            paymentMethod: 'wallet',
+            createdAt: serverTimestamp(),
+            customerEmail: formData.email,
+            customerName: formData.name
+        });
       });
 
       toast.success('تم الدفع بنجاح من المحفظة');
       clearCart();
       setSuccess(true);
     } catch (error: any) {
-        if (error.message.includes('insufficient_balance')) {
+        if (error.message === 'insufficient_balance') {
             toast.error('رصيدك غير كافٍ لإتمام العملية. يرجى شحن محفظتك أولاً.');
-        } else if (error.message.includes('insufficient_stock_')) {
+        } else if (error.message.startsWith('insufficient_stock_')) {
             const productName = error.message.replace('insufficient_stock_', '');
             toast.error(`عذراً، الكمية المتوفرة من ${productName} غير كافية.`);
         } else {
