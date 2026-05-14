@@ -66,28 +66,24 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // 1. Strict Security Headers (Helmet + Custom Config)
+  // 1. Security Headers (Helmet + Manual)
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "script-src": ["'self'", "'unsafe-inline'", "https://apis.google.com", "https://*.firebaseapp.com"],
         "connect-src": ["'self'", "https://*.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.google-analytics.com"],
-        "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://raw.githubusercontent.com", "https://github.com", "https://*.githubusercontent.com"],
+        "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://raw.githubusercontent.com", "https://github.com"],
         "frame-src": ["'self'", "https://*.firebaseapp.com"],
-        "frame-ancestors": ["'self'", "https://ai.studio", "https://*.google.com"], // Required for preview
-        "object-src": ["'none'"],
-        "upgrade-insecure-requests": [],
       },
-    },
-    crossOriginEmbedderPolicy: false, // Essential for some third-party resource loading
-    xFrameOptions: false, // Managed by CSP frame-ancestors for modern browsers
+    }
   }));
 
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-    // Security by obscurity: remove identity headers
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    // Security by obscurity
     res.removeHeader('X-Powered-By');
     next();
   });
