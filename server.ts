@@ -12,28 +12,27 @@ import cors from 'cors';
 dotenv.config();
 
 // Load Firebase Config
-let firebaseConfig: any = {
-  apiKey: process.env.VITE_API_KEY,
-  authDomain: process.env.VITE_AUTH_DOMAIN,
-  projectId: process.env.VITE_PROJECT_ID,
-  storageBucket: process.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_APP_ID,
-  databaseURL: process.env.VITE_DATABASE_URL
-};
-
+let firebaseConfig: any = {};
 try {
   const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
   if (fs.existsSync(configPath)) {
-    const localConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    firebaseConfig = { ...firebaseConfig, ...localConfig };
+    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
 } catch (error) {
-  console.log('Firebase config: defaulting to env vars.');
+  console.log('Firebase config file read error.');
 }
 
+// Override with environment variables if present
+if (process.env.VITE_API_KEY) firebaseConfig.apiKey = process.env.VITE_API_KEY;
+if (process.env.VITE_AUTH_DOMAIN) firebaseConfig.authDomain = process.env.VITE_AUTH_DOMAIN;
+if (process.env.VITE_PROJECT_ID) firebaseConfig.projectId = process.env.VITE_PROJECT_ID;
+if (process.env.VITE_STORAGE_BUCKET) firebaseConfig.storageBucket = process.env.VITE_STORAGE_BUCKET;
+if (process.env.VITE_MESSAGING_SENDER_ID) firebaseConfig.messagingSenderId = process.env.VITE_MESSAGING_SENDER_ID;
+if (process.env.VITE_APP_ID) firebaseConfig.appId = process.env.VITE_APP_ID;
+if (process.env.VITE_DATABASE_URL) firebaseConfig.databaseURL = process.env.VITE_DATABASE_URL;
+if (process.env.VITE_DATABASE_ID) firebaseConfig.firestoreDatabaseId = process.env.VITE_DATABASE_ID;
+
 // Initialize Firebase Admin lazily
-let adminApp: admin.app.App | undefined;
 let db_admin: any;
 
 function getDbAdmin() {
@@ -41,13 +40,9 @@ function getDbAdmin() {
 
   if (firebaseConfig.projectId) {
     try {
-      if (admin.apps.length === 0) {
-        adminApp = admin.initializeApp({
-          projectId: firebaseConfig.projectId,
-        });
-      } else {
-        adminApp = admin.apps[0] || undefined;
-      }
+      const adminApp = admin.apps[0] || admin.initializeApp({
+        projectId: firebaseConfig.projectId,
+      });
       
       db_admin = firebaseConfig.firestoreDatabaseId 
         ? getFirestore(adminApp, firebaseConfig.firestoreDatabaseId)
@@ -55,7 +50,7 @@ function getDbAdmin() {
         
       return db_admin;
     } catch (error) {
-      console.error('Firebase Admin init error:', error);
+      console.error('Firebase Admin getDbAdmin error:', error);
     }
   }
   return null;
@@ -65,13 +60,23 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // 1. Core Config & Security
+  // 2. Core Config & Security
   app.disable('x-powered-by');
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // 2. Security Headers (Helmet)
+  console.log('Firebase Project ID:', firebaseConfig.projectId);
+  if (firebaseConfig.projectId) {
+    if (admin.apps.length === 0) {
+      admin.initializeApp({
+        projectId: firebaseConfig.projectId,
+      });
+      console.log('Firebase Admin initialized with project:', firebaseConfig.projectId);
+    }
+  }
+
+  // 3. Security Headers (Helmet)
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
