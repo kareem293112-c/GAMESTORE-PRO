@@ -12,21 +12,24 @@ import cors from 'cors';
 dotenv.config();
 
 // Load Firebase Config
-let firebaseConfig: any = {};
+let firebaseConfig: any = {
+  apiKey: process.env.VITE_API_KEY,
+  authDomain: process.env.VITE_AUTH_DOMAIN,
+  projectId: process.env.VITE_PROJECT_ID,
+  storageBucket: process.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_APP_ID,
+  databaseURL: process.env.VITE_DATABASE_URL
+};
+
 try {
   const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-    
   if (fs.existsSync(configPath)) {
-    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } else {
-    console.warn('Firebase config file not found. Using environment variables if available.');
-    firebaseConfig = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
-    };
+    const localConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    firebaseConfig = { ...firebaseConfig, ...localConfig };
   }
 } catch (error) {
-  console.error('Error loading firebase config:', error);
+  console.log('Firebase config: defaulting to env vars.');
 }
 
 // Initialize Firebase Admin lazily
