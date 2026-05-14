@@ -26,11 +26,30 @@ try {
 if (process.env.VITE_API_KEY) firebaseConfig.apiKey = process.env.VITE_API_KEY;
 if (process.env.VITE_AUTH_DOMAIN) firebaseConfig.authDomain = process.env.VITE_AUTH_DOMAIN;
 if (process.env.VITE_PROJECT_ID) firebaseConfig.projectId = process.env.VITE_PROJECT_ID;
+if (process.env.FIREBASE_PROJECT_ID) firebaseConfig.projectId = process.env.FIREBASE_PROJECT_ID;
 if (process.env.VITE_STORAGE_BUCKET) firebaseConfig.storageBucket = process.env.VITE_STORAGE_BUCKET;
 if (process.env.VITE_MESSAGING_SENDER_ID) firebaseConfig.messagingSenderId = process.env.VITE_MESSAGING_SENDER_ID;
 if (process.env.VITE_APP_ID) firebaseConfig.appId = process.env.VITE_APP_ID;
 if (process.env.VITE_DATABASE_URL) firebaseConfig.databaseURL = process.env.VITE_DATABASE_URL;
-if (process.env.VITE_DATABASE_ID) firebaseConfig.firestoreDatabaseId = process.env.VITE_DATABASE_ID;
+if (process.env.VITE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID) {
+  firebaseConfig.firestoreDatabaseId = process.env.VITE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID;
+}
+
+// Service Account handling for Production (Render, etc.)
+let serviceAccount: any = null;
+const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/etc/secrets/firebase-service-account.json';
+
+try {
+  if (fs.existsSync(serviceAccountPath)) {
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    console.log('Using Firebase Service Account from file:', serviceAccountPath);
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    console.log('Using Firebase Service Account from environment variable');
+  }
+} catch (error) {
+  console.warn('Failed to parse service account:', error);
+}
 
 // Initialize Firebase Admin lazily
 let db_admin: any;
@@ -38,20 +57,35 @@ let db_admin: any;
 function getDbAdmin() {
   if (db_admin) return db_admin;
 
-  if (firebaseConfig.projectId) {
+  if (firebaseConfig.projectId || serviceAccount) {
     try {
-      const adminApp = admin.apps[0] || admin.initializeApp({
-        projectId: firebaseConfig.projectId,
-      });
+      if (admin.apps.length === 0) {
+        if (serviceAccount) {
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            projectId: firebaseConfig.projectId || serviceAccount.project_id,
+          });
+          console.log('Firebase Admin initialized with Service Account');
+        } else {
+          admin.initializeApp({
+            projectId: firebaseConfig.projectId,
+          });
+          console.log('Firebase Admin initialized with project ID ONLY (no service account)');
+        }
+      }
       
+      const adminApp = admin.apps[0];
       db_admin = firebaseConfig.firestoreDatabaseId 
         ? getFirestore(adminApp, firebaseConfig.firestoreDatabaseId)
         : getFirestore(adminApp);
         
+      console.log('Firestore Admin initialized successfully');
       return db_admin;
     } catch (error) {
       console.error('Firebase Admin getDbAdmin error:', error);
     }
+  } else {
+    console.warn('Firebase Project ID and Service Account missing');
   }
   return null;
 }
@@ -67,14 +101,9 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
 
   console.log('Firebase Project ID:', firebaseConfig.projectId);
-  if (firebaseConfig.projectId) {
-    if (admin.apps.length === 0) {
-      admin.initializeApp({
-        projectId: firebaseConfig.projectId,
-      });
-      console.log('Firebase Admin initialized with project:', firebaseConfig.projectId);
-    }
-  }
+  // Admin SDK will be initialized by the first call to getDbAdmin() or verifyToken/verifyAdmin
+  // But we triggers it once here for initial checks
+  getDbAdmin();
 
   // 3. Security Headers (Helmet)
   app.use(helmet({
@@ -109,9 +138,9 @@ async function startServer() {
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       req.user = decodedToken;
       next();
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      res.status(401).json({ error: 'Invalid token' });
+    } catch (error: any) {
+      console.error('Error verifying token details:', error.message);
+      res.status(401).json({ error: 'Invalid token', details: error.message });
     }
   };
 
@@ -245,11 +274,14 @@ async function startServer() {
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
 
     try {
+      console.log('Fetching products from Firestore...');
       const snapshot = await db.collection('products').get();
       const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      console.log(`Successfully fetched ${products.length} products`);
       res.json(products);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch products' });
+    } catch (error: any) {
+      console.error('Firestore Products Error:', error.message);
+      res.status(500).json({ error: 'Failed to fetch products', details: error.message });
     }
   });
 
