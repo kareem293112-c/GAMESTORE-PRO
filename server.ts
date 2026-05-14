@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createServer as createViteServer } from 'vite';
 import crypto from 'node:crypto';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
@@ -10,13 +12,13 @@ import cors from 'cors';
 
 dotenv.config();
 
-// الحل الآمن والنهائي لتعريف المسار الحالي في جميع بيئات التشغيل والـ Build
-const currentDir = process.cwd();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load Firebase Config
 let firebaseConfig: any = {};
 try {
-  const configPath = path.join(currentDir, 'firebase-applet-config.json');
+  const configPath = path.resolve(__dirname, 'firebase-applet-config.json');
     
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -45,7 +47,7 @@ function getDbAdmin() {
           projectId: firebaseConfig.projectId,
         });
       } else {
-        adminApp = admin.apps || undefined;
+        adminApp = admin.apps[0] || undefined;
       }
       
       db_admin = firebaseConfig.firestoreDatabaseId 
@@ -62,31 +64,31 @@ function getDbAdmin() {
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
 
   // 1. Security Headers (Helmet + Manual)
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "script-src": ["'self'", "'unsafe-inline'", "google.com", "https://*.firebaseapp.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "https://apis.google.com", "https://*.firebaseapp.com"],
         "connect-src": ["'self'", "https://*.googleapis.com", "https://*.firebaseio.com", "wss://*.firebaseio.com", "https://*.google-analytics.com"],
-        "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "githubusercontent.com", "https://github.com"],
+        "img-src": ["'self'", "data:", "https://*.googleusercontent.com", "https://raw.githubusercontent.com", "https://github.com"],
         "frame-src": ["'self'", "https://*.firebaseapp.com"],
       },
     }
   }));
 
-  // إخفاء هوية برمجية الخادم لحمايته من الفحص الخارجي وحظر بصمات الـ AI Bots
-  app.disable('x-powered-by');
-
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    // Security by obscurity
+    res.removeHeader('X-Powered-By');
     next();
   });
 
+  app.disable('x-powered-by');
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -109,7 +111,7 @@ async function startServer() {
     }
   };
 
-  // Check if user has management permissions
+  // Check if user is an admin
   const verifyAdmin = async (req: any, res: any, next: any) => {
     if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
     
@@ -119,14 +121,7 @@ async function startServer() {
     try {
       const userDoc = await db.collection('users').doc(req.user.uid).get();
       const userData = userDoc.data();
-      const isSuperAdmin = userData?.isAdmin || req.user.email === 'karmo2931@gmail.com';
-
-      if (isSuperAdmin || userData?.isProductManager || userData?.isOrderManager) {
-        req.adminRole = {
-          isAdmin: isSuperAdmin,
-          isProductManager: isSuperAdmin || userData?.isProductManager,
-          isOrderManager: isSuperAdmin || userData?.isOrderManager
-        };
+      if (userData?.isAdmin || userData?.isProductManager || userData?.isOrderManager) {
         next();
       } else {
         res.status(403).json({ error: 'Not authorized' });
@@ -136,25 +131,11 @@ async function startServer() {
     }
   };
 
-  // ==========================================
-  // CUSTOMER API ENDPOINTS
-  // ==========================================
-
-  app.get('/api/products', async (req, res) => {
-    const db = getDbAdmin();
-    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
-    try {
-      const snapshot = await db.collection('products').get();
-      const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-      res.json(products);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch products' });
-    }
-  });
-
+  // API Products Endpoints (Backend Proxy)
   app.get('/api/me/orders', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
       const snapshot = await db.collection('orders')
         .where('userId', '==', req.user.uid)
@@ -170,15 +151,18 @@ async function startServer() {
   app.get('/api/me/purchases/:productId', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
       const snapshot = await db.collection('orders')
         .where('userId', '==', req.user.uid)
         .where('status', '==', 'completed')
         .get();
+      
       const hasPurchased = snapshot.docs.some((doc: any) => {
         const orderData = doc.data();
         return orderData.items?.some((item: any) => item.id === req.params.productId);
       });
+
       res.json({ hasPurchased });
     } catch (error) {
       res.status(500).json({ error: 'Failed to check purchase status' });
@@ -188,12 +172,14 @@ async function startServer() {
   app.post('/api/orders', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
       const { items, total, customerEmail, customerName } = req.body;
       const userId = req.user.uid;
       const orderId = `ORD-${Date.now()}`;
 
       await db.runTransaction(async (transaction: any) => {
+        // 1. Check user balance
         const userRef = db.collection('users').doc(userId);
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists) throw new Error('User not found');
@@ -202,6 +188,7 @@ async function startServer() {
         const balance = userData.balance || 0;
         if (balance < total) throw new Error('insufficient_balance');
 
+        // 2. Check stock
         const productChecks = await Promise.all(items.map(async (item: any) => {
           const productRef = db.collection('products').doc(item.productId);
           const productDoc = await transaction.get(productRef);
@@ -216,24 +203,32 @@ async function startServer() {
           }
         }
 
+        // 3. Perform updates
         transaction.update(userRef, {
           balance: balance - total,
           updatedAt: FieldValue.serverTimestamp()
         });
 
         for (const { ref, doc, item } of productChecks) {
-          transaction.update(ref, { stock: doc.data().stock - item.quantity });
+          transaction.update(ref, {
+            stock: doc.data().stock - item.quantity
+          });
         }
 
+        // 4. Create order
         const orderRef = db.collection('orders').doc(orderId);
         transaction.set(orderRef, {
-          userId, items, total,
+          userId,
+          items,
+          total,
           status: 'pending',
           paymentMethod: 'wallet',
-          customerEmail, customerName,
+          customerEmail,
+          customerName,
           createdAt: FieldValue.serverTimestamp()
         });
       });
+
       res.status(201).json({ orderId });
     } catch (error: any) {
       console.error('Checkout error:', error);
@@ -241,99 +236,80 @@ async function startServer() {
     }
   });
 
-  app.post('/api/wallet/redeem', verifyToken, async (req: any, res: any) => {
-    const { code } = req.body;
+  app.get('/api/products', async (req, res) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
-      await db.runTransaction(async (transaction: any) => {
-        const codeRef = db.collection('recharge_codes').doc(code);
-        const codeDoc = await transaction.get(codeRef);
-
-        if (!codeDoc.exists || codeDoc.data().isUsed) {
-          throw new Error('invalid_or_used_code');
-        }
-
-        const amount = codeDoc.data().amount;
-        const userRef = db.collection('users').doc(req.user.uid);
-        const userDoc = await transaction.get(userRef);
-
-        const currentBalance = userDoc.data()?.balance || 0;
-        transaction.update(userRef, { balance: currentBalance + amount });
-        transaction.update(codeRef, { 
-          isUsed: true, 
-          redeemedBy: req.user.uid, 
-          redeemedAt: FieldValue.serverTimestamp() 
-        });
-      });
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  // ==========================================
-  // ADMIN API ENDPOINTS
-  // ==========================================
-
-  app.get('/api/admin/orders', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    const db = getDbAdmin();
-    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
-    try {
-      const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
-      const orders = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-      res.json(orders);
+      const snapshot = await db.collection('products').get();
+      const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      res.json(products);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch admin orders' });
+      res.status(500).json({ error: 'Failed to fetch products' });
     }
   });
 
-  app.put('/api/admin/orders/:orderId', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    if (!req.adminRole.isOrderManager) return res.status(403).json({ error: 'Access denied' });
-    const { status, keys } = req.body;
+  app.get('/api/products/:id', async (req, res) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
-      const orderRef = db.collection('orders').doc(req.params.orderId);
-      await orderRef.update({ status, keys, updatedAt: FieldValue.serverTimestamp() });
-      res.json({ success: true });
+      const doc = await db.collection('products').doc(req.params.id).get();
+      if (!doc.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      res.json({ id: doc.id, ...doc.data() });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to update order' });
+      res.status(500).json({ error: 'Failed to fetch product' });
     }
   });
 
-  app.post('/api/admin/orders/:orderId/refund', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    if (!req.adminRole.isAdmin) return res.status(403).json({ error: 'Superadmin only' });
+  app.get('/api/products/:id/reviews', async (req, res) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
-      await db.runTransaction(async (transaction: any) => {
-        const orderRef = db.collection('orders').doc(req.params.orderId);
-        const orderDoc = await transaction.get(orderRef);
-        if (orderDoc.data().status === 'refunded') throw new Error('Already refunded');
-
-        const userRef = db.collection('users').doc(orderDoc.data().userId);
-        const userDoc = await transaction.get(userRef);
-
-        transaction.update(userRef, { balance: (userDoc.data().balance || 0) + orderDoc.data().total });
-        transaction.update(orderRef, { status: 'refunded' });
-      });
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      const snapshot = await db.collection('reviews')
+        .where('productId', '==', req.params.id)
+        .orderBy('createdAt', 'desc')
+        .get();
+      const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch reviews' });
     }
   });
 
-  app.post('/api/admin/products', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    if (!req.adminRole.isProductManager) return res.status(403).json({ error: 'Access denied' });
+  app.post('/api/products/:id/reviews', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
-      const productData = req.body;
-      const docRef = await db.collection('products').add({
-        ...productData,
+      const { userName, rating, comment } = req.body;
+      const review = {
+        productId: req.params.id,
+        userId: req.user.uid,
+        userName,
+        rating: Number(rating),
+        comment,
         createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
+      };
+      const docRef = await db.collection('reviews').add(review);
+      res.status(201).json({ id: docRef.id });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to submit review' });
+    }
+  });
+
+  app.post('/api/products', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const product = req.body;
+      const docRef = await db.collection('products').add({
+        ...product,
+        createdAt: FieldValue.serverTimestamp(),
       });
       res.status(201).json({ id: docRef.id });
     } catch (error) {
@@ -341,15 +317,14 @@ async function startServer() {
     }
   });
 
-  app.put('/api/admin/products/:id', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    if (!req.adminRole.isProductManager) return res.status(403).json({ error: 'Access denied' });
+  app.put('/api/products/:id', verifyToken, verifyAdmin, async (req, res) => {
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
     try {
-      const productData = req.body;
       await db.collection('products').doc(req.params.id).update({
-        ...productData,
-        updatedAt: FieldValue.serverTimestamp()
+        ...req.body,
+        updatedAt: FieldValue.serverTimestamp(),
       });
       res.json({ success: true });
     } catch (error) {
@@ -357,41 +332,239 @@ async function startServer() {
     }
   });
 
-  // ==========================================
-  // VITE STATIC PRODUCTION SERVING AND FAILSAFE
-  // ==========================================
-  
-  // فحص واختيار المسار المتاح فعلياً لمجلد الـ dist المتولد أثناء البناء على Render
-  let distPath = path.join(currentDir, 'dist');
+  app.delete('/api/products/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
 
-  if (!fs.existsSync(path.join(distPath, 'index.html'))) {
-    if (fs.existsSync(path.join(currentDir, 'src', 'dist'))) {
-      distPath = path.join(currentDir, 'src', 'dist');
-    } else if (fs.existsSync(path.join(currentDir, 'dist', 'dist'))) {
-      distPath = path.join(currentDir, 'dist', 'dist');
+    try {
+      await db.collection('products').doc(req.params.id).delete();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete product' });
+    }
+  });
+
+  // API Orders Endpoints
+  app.post('/api/orders/:id/refund', verifyToken, verifyAdmin, async (req: any, res: any) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const orderId = req.params.id;
+      const { amount, userId } = req.body;
+
+      if (!amount || amount <= 0 || !userId) {
+        return res.status(400).json({ error: 'Invalid refund data' });
+      }
+
+      await db.runTransaction(async (transaction: any) => {
+        const orderRef = db.collection('orders').doc(orderId);
+        const userRef = db.collection('users').doc(userId);
+
+        const orderDoc = await transaction.get(orderRef);
+        if (!orderDoc.exists) throw new Error('Order not found');
+        
+        const orderData = orderDoc.data();
+        if (orderData.status === 'cancelled') {
+           throw new Error('Order already cancelled');
+        }
+
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) throw new Error('User not found');
+
+        const currentBalance = userDoc.data().balance || 0;
+
+        transaction.update(userRef, {
+          balance: currentBalance + amount,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+
+        transaction.update(orderRef, {
+          status: 'cancelled',
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Refund error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/orders', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+      const orders = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+  });
+
+  app.put('/api/orders/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      await db.collection('orders').doc(req.params.id).update({
+        ...req.body,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update order' });
+    }
+  });
+
+  // API Users Endpoints
+  app.post('/api/me/profile', verifyToken, async (req: any, res: any) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const { displayName } = req.body;
+      const userRef = db.collection('users').doc(req.user.uid);
+      const doc = await userRef.get();
+
+      if (!doc.exists) {
+        // Critical: Role assignment must be server-side
+        const role = req.user.email === 'karmo2931@gmail.com' ? 'admin' : 'customer';
+        const newProfile = {
+          email: req.user.email,
+          displayName: displayName || req.user.email.split('@')[0],
+          role: role,
+          balance: 0,
+          createdAt: FieldValue.serverTimestamp(),
+        };
+        await userRef.set(newProfile);
+        res.status(201).json(newProfile);
+      } else {
+        res.json(doc.data());
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create/fetch profile' });
+    }
+  });
+
+  app.get('/api/users', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const snapshot = await db.collection('users').get();
+      const users = snapshot.docs.map((doc: any) => ({ uid: doc.id, ...doc.data() }));
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.put('/api/users/:id/balance', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const { balance } = req.body;
+      await db.collection('users').doc(req.params.id).update({
+        balance: Number(balance),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update balance' });
+    }
+  });
+
+  app.delete('/api/orders/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      await db.collection('orders').doc(req.params.id).delete();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete order' });
+    }
+  });
+
+  // API Reviews Endpoints
+  app.get('/api/reviews', async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      const snapshot = await db.collection('reviews').get();
+      const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+  });
+
+  app.delete('/api/reviews/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+
+    try {
+      await db.collection('reviews').doc(req.params.id).delete();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete review' });
+    }
+  });
+
+  // Health check
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', fullstack: true });
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Starting in development mode...');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    console.log('Starting in production mode...');
+    
+    // Check multiple potential dist paths
+    const possibleDistPaths = [
+      path.resolve(__dirname, 'dist'),
+      path.resolve(process.cwd(), 'dist'),
+      path.resolve(process.cwd(), 'src', 'dist')
+    ];
+    
+    let distPath = '';
+    for (const p of possibleDistPaths) {
+      if (fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html'))) {
+        distPath = p;
+        break;
+      }
+    }
+    
+    if (distPath) {
+      console.log(`Serving static files from: ${distPath}`);
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    } else {
+      console.error('Dist folder or index.html missing in all expected locations:', possibleDistPaths);
+      app.get('*', (req, res) => {
+        res.status(500).send('Application build not found. Please ensure the build command was successful.');
+      });
     }
   }
 
-  console.log(`[Vite Host] Serving static assets from: ${distPath}`);
-
-  // بث ملفات الواجهة الأمامية للمتجر
-  app.use(express.static(distPath));
-
-  // تشغيل الـ React Router واستدعاء الصفحة الرئيسية بأمان وتفادي الـ 404 والصفحات البيضاء
-  app.get('*', (req, res) => {
-    const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send('index.html not found in dist folder. Build pipeline failed.');
-    }
-  });
-
-  // فتح منفذ الاستماع لبدء العمل على خوادم Render
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server environment secure. Broadcasting on port: ${PORT}`);
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 
-// تشغيل الخادم
 startServer();

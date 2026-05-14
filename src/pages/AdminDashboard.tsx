@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db, auth } from './firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product, Review } from '../types';
 import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter, CreditCard } from 'lucide-react';

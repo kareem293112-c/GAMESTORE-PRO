@@ -3,7 +3,7 @@ import { AuthChrome } from '../components/auth/AuthChrome';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth } from './firebase';
 import { toast } from 'react-hot-toast';
 import { Chrome } from 'lucide-react';
 import { callApi } from '../lib/api';

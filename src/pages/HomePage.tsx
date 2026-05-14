@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from './firebase';
 import { Product } from '../types';
 import { SAMPLE_PRODUCTS } from '../constants';
 import { ProductCard } from '../components/ui/ProductCard';
