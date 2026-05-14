@@ -10,17 +10,18 @@ import cors from 'cors';
 
 dotenv.config();
 
-// مسار التشغيل الجذري الآمن المتوافق مع جميع البيئات وRender
+// الحل الآمن والنهائي لتعريف المسار الحالي في جميع بيئات التشغيل والـ Build
 const currentDir = process.cwd();
 
-// تحميل إعدادات Firebase Admin بأمان
+// Load Firebase Config
 let firebaseConfig: any = {};
 try {
   const configPath = path.join(currentDir, 'firebase-applet-config.json');
+    
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   } else {
-    console.warn('Firebase config file not found. Using environment variables.');
+    console.warn('Firebase config file not found. Using environment variables if available.');
     firebaseConfig = {
       projectId: process.env.FIREBASE_PROJECT_ID,
       firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
@@ -30,11 +31,13 @@ try {
   console.error('Error loading firebase config:', error);
 }
 
+// Initialize Firebase Admin lazily
 let adminApp: admin.app.App | undefined;
 let db_admin: any;
 
 function getDbAdmin() {
   if (db_admin) return db_admin;
+
   if (firebaseConfig.projectId) {
     try {
       if (admin.apps.length === 0) {
@@ -42,11 +45,13 @@ function getDbAdmin() {
           projectId: firebaseConfig.projectId,
         });
       } else {
-        adminApp = admin.apps[0] || undefined;
+        adminApp = admin.apps || undefined;
       }
+      
       db_admin = firebaseConfig.firestoreDatabaseId 
         ? getFirestore(adminApp, firebaseConfig.firestoreDatabaseId)
         : getFirestore(adminApp);
+        
       return db_admin;
     } catch (error) {
       console.error('Firebase Admin init error:', error);
@@ -59,7 +64,7 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
-  // 1. الإعدادات الأمنية الصارمة لحماية المتجر وبوابات الدفع
+  // 1. Security Headers (Helmet + Manual)
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -72,7 +77,7 @@ async function startServer() {
     }
   }));
 
-  // حظر وإخفاء هوية برمجية الخادم (إخفاء أثر الـ AI والـ Express)
+  // إخفاء هوية برمجية الخادم لحمايته من الفحص الخارجي وحظر بصمات الـ AI Bots
   app.disable('x-powered-by');
 
   app.use((req, res, next) => {
@@ -86,29 +91,28 @@ async function startServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // ==========================================
-  // البرمجيات الوسيطة (Middlewares)
-  // ==========================================
-
-  // التحقق من توكن المستخدم (Authentication)
+  // Middleware to verify Firebase Auth token
   const verifyToken = async (req: any, res: any, next: any) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
+
     const idToken = authHeader.split('Bearer ')[1];
     try {
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       req.user = decodedToken;
       next();
     } catch (error) {
+      console.error('Error verifying token:', error);
       res.status(401).json({ error: 'Invalid token' });
     }
   };
 
-  // التحقق من صلاحيات الإدارة (Admin Roles)
+  // Check if user has management permissions
   const verifyAdmin = async (req: any, res: any, next: any) => {
     if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    
     const db = getDbAdmin();
     if (!db) return res.status(500).json({ error: 'Firebase not configured' });
 
@@ -116,7 +120,7 @@ async function startServer() {
       const userDoc = await db.collection('users').doc(req.user.uid).get();
       const userData = userDoc.data();
       const isSuperAdmin = userData?.isAdmin || req.user.email === 'karmo2931@gmail.com';
-      
+
       if (isSuperAdmin || userData?.isProductManager || userData?.isOrderManager) {
         req.adminRole = {
           isAdmin: isSuperAdmin,
@@ -133,13 +137,12 @@ async function startServer() {
   };
 
   // ==========================================
-  // مسارات واجهة المستخدم (Customer APIs)
+  // CUSTOMER API ENDPOINTS
   // ==========================================
 
-  // جلب المنتجات المتاحة
   app.get('/api/products', async (req, res) => {
     const db = getDbAdmin();
-    if (!db) return res.status(500).json({ error: 'Database context lost' });
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       const snapshot = await db.collection('products').get();
       const products = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
@@ -149,42 +152,42 @@ async function startServer() {
     }
   });
 
-  // جلب طلبات المستخدم الحالي
   app.get('/api/me/orders', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       const snapshot = await db.collection('orders')
         .where('userId', '==', req.user.uid)
+        .orderBy('createdAt', 'desc')
         .get();
       const orders = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
       res.json(orders);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch orders' });
+      res.status(500).json({ error: 'Failed to fetch your orders' });
     }
   });
 
-  // فحص حالة شراء المنتج لمنح التقييم
   app.get('/api/me/purchases/:productId', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       const snapshot = await db.collection('orders')
         .where('userId', '==', req.user.uid)
         .where('status', '==', 'completed')
         .get();
-      const hasPurchased = snapshot.docs.some((doc: any) => 
-        doc.data().items?.some((item: any) => item.id === req.params.productId)
-      );
+      const hasPurchased = snapshot.docs.some((doc: any) => {
+        const orderData = doc.data();
+        return orderData.items?.some((item: any) => item.id === req.params.productId);
+      });
       res.json({ hasPurchased });
     } catch (error) {
-      res.status(500).json({ error: 'Verification failed' });
+      res.status(500).json({ error: 'Failed to check purchase status' });
     }
   });
 
-  // إتمام عملية الشراء الآمنة (الخصم والمخزون في لحظة واحدة لمنع الاحتيال)
   app.post('/api/orders', verifyToken, async (req: any, res: any) => {
     const db = getDbAdmin();
-    if (!db) return res.status(500).json({ error: 'Firebase offline' });
-
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       const { items, total, customerEmail, customerName } = req.body;
       const userId = req.user.uid;
@@ -193,9 +196,10 @@ async function startServer() {
       await db.runTransaction(async (transaction: any) => {
         const userRef = db.collection('users').doc(userId);
         const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) throw new Error('User account not found');
+        if (!userDoc.exists) throw new Error('User not found');
         
-        const balance = userDoc.data().balance || 0;
+        const userData = userDoc.data();
+        const balance = userData.balance || 0;
         if (balance < total) throw new Error('insufficient_balance');
 
         const productChecks = await Promise.all(items.map(async (item: any) => {
@@ -205,22 +209,22 @@ async function startServer() {
         }));
 
         for (const { doc, item } of productChecks) {
-          if (!doc.exists) throw new Error('Product unlisted');
-          if (doc.data().stock < item.quantity) throw new Error('out_of_stock');
+          if (!doc.exists) throw new Error(`Product ${item.name} not found`);
+          const productData = doc.data();
+          if (productData.stock < item.quantity) {
+            throw new Error(`insufficient_stock_${item.name}`);
+          }
         }
 
-        // خصم الرصيد
         transaction.update(userRef, {
           balance: balance - total,
           updatedAt: FieldValue.serverTimestamp()
         });
 
-        // تحديث المخزون
         for (const { ref, doc, item } of productChecks) {
           transaction.update(ref, { stock: doc.data().stock - item.quantity });
         }
 
-        // إنشاء الفاتورة والطلب
         const orderRef = db.collection('orders').doc(orderId);
         transaction.set(orderRef, {
           userId, items, total,
@@ -230,17 +234,17 @@ async function startServer() {
           createdAt: FieldValue.serverTimestamp()
         });
       });
-
       res.status(201).json({ orderId });
     } catch (error: any) {
+      console.error('Checkout error:', error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  // نظام شحن بطاقات الرصيد (أكواد الشحن والمحفظة)
   app.post('/api/wallet/redeem', verifyToken, async (req: any, res: any) => {
     const { code } = req.body;
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       await db.runTransaction(async (transaction: any) => {
         const codeRef = db.collection('recharge_codes').doc(code);
@@ -256,7 +260,11 @@ async function startServer() {
 
         const currentBalance = userDoc.data()?.balance || 0;
         transaction.update(userRef, { balance: currentBalance + amount });
-        transaction.update(codeRef, { isUsed: true, redeemedBy: req.user.uid, redeemedAt: FieldValue.serverTimestamp() });
+        transaction.update(codeRef, { 
+          isUsed: true, 
+          redeemedBy: req.user.uid, 
+          redeemedAt: FieldValue.serverTimestamp() 
+        });
       });
       res.json({ success: true });
     } catch (error: any) {
@@ -265,27 +273,26 @@ async function startServer() {
   });
 
   // ==========================================
-  // مسارات لوحة التحكم الإدارية (Admin APIs)
+  // ADMIN API ENDPOINTS
   // ==========================================
 
-  // إضافة منتج جديد (صلاحية مدير المنتجات أو المسؤول)
-  app.post('/api/admin/products', verifyToken, verifyAdmin, async (req: any, res: any) => {
-    if (!req.adminRole.isProductManager) return res.status(403).json({ error: 'Access denied' });
+  app.get('/api/admin/orders', verifyToken, verifyAdmin, async (req: any, res: any) => {
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
-      const newProduct = req.body;
-      const ref = await db.collection('products').add({ ...newProduct, createdAt: FieldValue.serverTimestamp() });
-      res.status(201).json({ id: ref.id });
+      const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+      const orders = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      res.json(orders);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create product' });
+      res.status(500).json({ error: 'Failed to fetch admin orders' });
     }
   });
 
-  // تحديث حالة الطلب وتسليم البطاقات الرقمية
   app.put('/api/admin/orders/:orderId', verifyToken, verifyAdmin, async (req: any, res: any) => {
     if (!req.adminRole.isOrderManager) return res.status(403).json({ error: 'Access denied' });
     const { status, keys } = req.body;
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       const orderRef = db.collection('orders').doc(req.params.orderId);
       await orderRef.update({ status, keys, updatedAt: FieldValue.serverTimestamp() });
@@ -295,10 +302,10 @@ async function startServer() {
     }
   });
 
-  // نظام استرجاع الأموال للمحفظة عند إلغاء الطلب
   app.post('/api/admin/orders/:orderId/refund', verifyToken, verifyAdmin, async (req: any, res: any) => {
     if (!req.adminRole.isAdmin) return res.status(403).json({ error: 'Superadmin only' });
     const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
     try {
       await db.runTransaction(async (transaction: any) => {
         const orderRef = db.collection('orders').doc(req.params.orderId);
@@ -317,9 +324,44 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/products', verifyToken, verifyAdmin, async (req: any, res: any) => {
+    if (!req.adminRole.isProductManager) return res.status(403).json({ error: 'Access denied' });
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+    try {
+      const productData = req.body;
+      const docRef = await db.collection('products').add({
+        ...productData,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      res.status(201).json({ id: docRef.id });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create product' });
+    }
+  });
+
+  app.put('/api/admin/products/:id', verifyToken, verifyAdmin, async (req: any, res: any) => {
+    if (!req.adminRole.isProductManager) return res.status(403).json({ error: 'Access denied' });
+    const db = getDbAdmin();
+    if (!db) return res.status(500).json({ error: 'Firebase not configured' });
+    try {
+      const productData = req.body;
+      await db.collection('products').doc(req.params.id).update({
+        ...productData,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update product' });
+    }
+  });
+
   // ==========================================
-  // النظام الديناميكي لتوجيه وقراءة ملفات الـ HTML والـ Static Assets
+  // VITE STATIC PRODUCTION SERVING AND FAILSAFE
   // ==========================================
+  
+  // فحص واختيار المسار المتاح فعلياً لمجلد الـ dist المتولد أثناء البناء على Render
   let distPath = path.join(currentDir, 'dist');
 
   if (!fs.existsSync(path.join(distPath, 'index.html'))) {
@@ -330,21 +372,26 @@ async function startServer() {
     }
   }
 
-  console.log(`[Vite Host] Static mapping active at: ${distPath}`);
+  console.log(`[Vite Host] Serving static assets from: ${distPath}`);
+
+  // بث ملفات الواجهة الأمامية للمتجر
   app.use(express.static(distPath));
 
+  // تشغيل الـ React Router واستدعاء الصفحة الرئيسية بأمان وتفادي الـ 404 والصفحات البيضاء
   app.get('*', (req, res) => {
     const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send('Index header asset compilation mismatch. Please clear cache and re-build.');
+      res.status(404).send('index.html not found in dist folder. Build pipeline failed.');
     }
   });
 
+  // فتح منفذ الاستماع لبدء العمل على خوادم Render
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server environment secure. Broadcasting on port: ${PORT}`);
   });
 }
 
+// تشغيل الخادم
 startServer();
