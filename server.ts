@@ -6,7 +6,8 @@ import crypto from 'node:crypto';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import fs from 'node:fs';
+const configPath = path.join(currentDir, 'firebase-applet-config.json');
+
 import helmet from 'helmet';
 import cors from 'cors';
 
