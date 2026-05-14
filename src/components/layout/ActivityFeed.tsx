@@ -1,89 +1,143 @@
-import React from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Users, 
-  ClipboardList, 
-  LogOut, 
-  ShieldAlert,
-  Key
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ShoppingBag, CheckCircle } from 'lucide-react';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
-// استدعاء الفايربيز بالمسار الصحيح المعدل لتفادي خطأ الـ Build
-import { auth } from '../../lib/firebase';
+interface Activity {
+  id: string;
+  user: string;
+  product: string;
+  timestamp: Date;
+}
 
-export const AdminLayout: React.FC = () => {
-  const { profile, user } = useAuth();
-  const navigate = useNavigate();
+import { useLanguage } from '../../context/LanguageContext';
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error("Logout error:", error);
+export const ActivityFeed: React.FC = () => {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const { language, t } = useLanguage();
+
+  useEffect(() => {
+    // Fetch last 10 completed orders
+    const q = query(
+      collection(db, 'orders'),
+      where('status', '==', 'completed'),
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newActivities = snapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Name masking: "Maryam Najjar" -> "Maryam N."
+        const rawName = data.customerName || t('activity.fallbackUser');
+        const nameParts = rawName.trim().split(' ');
+        let maskedName = rawName;
+        if (nameParts.length > 1) {
+          const lastChar = nameParts[nameParts.length - 1][0];
+          maskedName = `${nameParts[0]} ${lastChar}.`;
+        }
+
+        const product = data.items?.[0]?.name || t('activity.fallbackProduct');
+        
+        // Filter out specific requested activity (PERMANENT FILTER - DO NOT REMOVE)
+        if (rawName.includes('Kareem') || (rawName.includes('ABN s.') && product.includes('Windows'))) {
+          return null;
+        }
+
+        return {
+          id: doc.id,
+          user: maskedName,
+          product: product,
+          timestamp: data.createdAt?.toDate() || new Date()
+        };
+      }).filter((activity): activity is Activity => activity !== null);
+
+      if (newActivities.length > 0) {
+        setActivities(newActivities);
+        setIsVisible(true);
+      }
+    }, (error) => {
+      console.error("Error fetching live activities:", error);
+    });
+
+    return () => unsubscribe();
+  }, [t]);
+
+  useEffect(() => {
+    if (activities.length === 0) return;
+
+    const interval = setInterval(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % activities.length);
+        setIsVisible(true);
+      }, 500);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [activities.length]);
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (language === 'ar') {
+      if (diffInSeconds < 60) return 'منذ ثوانٍ';
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `منذ ${diffInMinutes} دقيقة`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `منذ ${diffInDays} يوم`;
+    } else {
+      if (diffInSeconds < 60) return 'Just now';
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
     }
   };
 
+  if (activities.length === 0) return null;
+
+  const current = activities[currentIndex];
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      {/* القائمة الجانبية للوحة التحكم */}
-      <aside className="w-64 bg-slate-900 border-e border-slate-800 flex flex-col justify-between p-4">
-        <div>
-          <div className="flex items-center gap-2 px-2 py-4 mb-6 border-b border-slate-800">
-            <ShieldAlert className="w-6 h-6 text-indigo-500" />
-            <span className="font-black text-lg tracking-wider">لوحة الإدارة</span>
-          </div>
-
-          <nav className="space-y-1">
-            <Link to="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors text-sm font-medium">
-              <LayoutDashboard className="w-5 h-5 text-slate-400" />
-              <span>الرئيسية</span>
-            </Link>
-            
-            <Link to="/admin/products" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors text-sm font-medium">
-              <ShoppingBag className="w-5 h-5 text-slate-400" />
-              <span>إدارة المنتجات</span>
-            </Link>
-
-            <Link to="/admin/orders" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors text-sm font-medium">
-              <ClipboardList className="w-5 h-5 text-slate-400" />
-              <span>إدارة الطلبات</span>
-            </Link>
-
-            <Link to="/admin/users" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors text-sm font-medium">
-              <Users className="w-5 h-5 text-slate-400" />
-              <span>المستخدمين</span>
-            </Link>
-
-            <Link to="/admin/recharge" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors text-sm font-medium">
-              <Key className="w-5 h-5 text-slate-400" />
-              <span>أكواد الشحن</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="border-t border-slate-800 pt-4">
-          <div className="px-3 py-2 mb-2 flex flex-col">
-            <span className="text-xs text-slate-500 truncate">{user?.email}</span>
-            <span className="text-xs text-indigo-400 font-bold mt-0.5">🎮 {profile?.role || 'المسؤول'}</span>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors text-sm font-medium"
+    <div className="fixed bottom-6 inset-inline-end-6 z-50 pointer-events-none">
+      <AnimatePresence mode="wait">
+        {isVisible && (
+          <motion.div
+            key={`${current.id}-${currentIndex}`}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[300px] pointer-events-auto"
           >
-            <LogOut className="w-5 h-5" />
-            <span>تسجيل الخروج</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* المحتوى الرئيسي للوحة */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        <Outlet />
-      </main>
+            <div className="bg-indigo-600/20 p-2 rounded-xl">
+              <ShoppingBag className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-slate-200 text-xs font-bold">{current.user}</span>
+                <span className="text-slate-500 text-[10px]">{t('activity.purchased')}</span>
+              </div>
+              <p className="text-white text-sm font-black truncate max-w-[200px]">
+                {current.product}
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <CheckCircle className="w-3 h-3 text-emerald-500" />
+                <span className="text-slate-500 text-[10px]">{getTimeAgo(current.timestamp)}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
