@@ -4,30 +4,70 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- اسم الموقع التجاري الرسمي الذي يظهر في علامة التبويب -->
+    <!-- العنوان الأساسي -->
     <title>Gamestore Pro | متجرك الأول للألعاب والبطاقات الرقمية</title>
     
-    <!-- وصف احترافي لمحركات البحث لمنع ظهور نصوص الذكاء الاصطناعي في جوجل -->
+    <!-- تحسين محركات البحث SEO -->
     <meta name="description" content="منصتك الموثوقة لشحن الألعاب، شراء البطاقات الرقمية، وحسابات الألعاب المميزة بأسعار تنافسية وتسليم فوري." />
-    
-    <!-- ربط أيقونة المتجر (Favicon) -->
+    <meta name="keywords" content="متجر ألعاب, بطاقات رقمية, شحن شدات, ستيم, بطاقات جوجل بلاي, Gamestore" />
+    <meta name="author" content="Gamestore Pro" />
+
+    <!-- وسوم الـ Social Media (Open Graph) - لجعل الرابط يظهر بشكل جذاب -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Gamestore Pro | عالم الألعاب بين يديك" />
+    <meta property="og:description" content="اشترِ ألعابك وبطاقاتك المفضلة بأمان وسرعة فائقة." />
+    <meta property="og:image" content="/og-image.jpg" /> <!-- استبدلها بصورة غلاف لموقعك لاحقاً -->
+    <meta property="og:url" content="https://gamestore-pro-u1v1.onrender.com/" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- أيقونة الموقع -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <!-- استدعاء خط "Cairo" الاحترافي المناسب لـ واجهات الألعاب العربية -->
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
+    <!-- تحسين تحميل الخطوط (Cairo) لتقليل وقت التحميل -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+
     <style>
-      /* تطبيق الخط الاحترافي على كامل الموقع وتنعيم الحواف */
+      /* إعدادات الخطوط الافتراضية وتنعيم النص */
+      :root {
+        --font-main: 'Cairo', sans-serif;
+      }
+      
       * {
-        font-family: 'Cairo', sans-serif !important;
+        font-family: var(--font-main) !important;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* خلفية بسيطة تظهر أثناء تحميل تطبيق React لمنع "الوميض الأبيض" */
+      body {
+        background-color: #0f172a; /* لون داكن يناسب مواقع الألعاب */
+        color: #ffffff;
+      }
+
+      /* تنسيق شاشة التحميل الأولية (اختياري) */
+      #root:empty {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
       }
     </style>
+
+    <!-- ملفات Vite الأساسية (سيتم تحديث الأسماء تلقائياً عند Build) -->
+    <script type="module" crossorigin src="/assets/index-BbuxJCA5.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Vg765jAh.css">
   </head>
   <body>
-    <div id="root"></div>
-    <!-- السطر البرمجي الأساسي لتشغيل تطبيق React/TypeScript الخاص بك -->
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="root">
+      <!-- رسالة بسيطة تظهر فقط إذا تأخر التحميل أو تعطل الجافاسكريبت -->
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.2rem;">
+        جاري تحميل المتجر...
+      </div>
+    </div>
   </body>
 </html>
