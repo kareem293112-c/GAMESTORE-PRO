@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Gamepad2, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Gamepad2, Search, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
+import { useCartStore } from '../../store/useCartStore';
 import { useSearch } from '../../context/SearchContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { auth } from '../../lib/firebase';
@@ -17,7 +17,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const { user, profile, isAdmin, isProductManager, isOrderManager } = useAuth();
   const canAccessAdmin = isAdmin || isProductManager || isOrderManager;
-  const { itemCount } = useCart();
+  const { itemCount } = useCartStore();
   const { searchQuery, setSearchQuery } = useSearch();
   const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -104,6 +104,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
               <Languages className="w-4 h-4" />
               <span>{language === 'ar' ? 'English' : 'عربي'}</span>
             </button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/orders')}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-xs font-medium"
+              title="طلباتي"
+            >
+              <Package className="w-4 h-4" />
+              <span className="hidden lg:inline">طلباتي</span>
+            </motion.button>
 
             <motion.button
               key={itemCount}
@@ -232,8 +243,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2">
               {t('nav.home')}
             </Link>
-            <Link to="/games" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2">
-              {t('nav.games')}
+            <Link to="/orders" onClick={() => setIsMenuOpen(false)} className="text-slate-300 hover:text-white py-2">
+              طلباتي
             </Link>
             {canAccessAdmin && (
               <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-indigo-400 hover:text-indigo-300 py-2">

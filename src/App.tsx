@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
 import { SearchProvider } from './context/SearchContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { Navbar } from './components/layout/Navbar';
@@ -25,6 +24,8 @@ import { TermsPage } from './pages/TermsPage';
 import { SupportPage } from './pages/SupportPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
+
+import { OrdersPage } from './pages/OrdersPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { user, profile, loading, isAdmin, isProductManager, isOrderManager } = useAuth();
@@ -85,6 +86,7 @@ const AppContent: React.FC = () => {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -101,13 +103,11 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <CartProvider>
-          <SearchProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </SearchProvider>
-        </CartProvider>
+        <SearchProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SearchProvider>
       </AuthProvider>
     </LanguageProvider>
   );

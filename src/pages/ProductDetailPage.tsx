@@ -4,7 +4,7 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { db } from '../lib/firebase';
 import { Product, Review, OperationType } from '../types';
 import { SAMPLE_PRODUCTS } from '../constants';
-import { useCart } from '../context/CartContext';
+import { useCartStore } from '../store/useCartStore';
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../lib/utils';
 import { ShoppingCart, Star, ShieldCheck, Zap, ArrowRight, Monitor, Globe, Clock, Cpu, HardDrive, Cpu as Gpu, Layout, Calendar, Briefcase, Languages, Send, MessageSquare } from 'lucide-react';
@@ -21,7 +21,7 @@ export const ProductDetailPage: React.FC = () => {
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const { addToCart } = useCart();
+  const { addItem: addToCart } = useCartStore();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 

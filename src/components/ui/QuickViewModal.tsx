@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingCart, Star, ShieldCheck, Zap, Monitor, Globe, Clock, Calendar, Briefcase, Languages } from 'lucide-react';
 import { Product } from '../../types';
 import { formatPrice } from '../../lib/utils';
-import { useCart } from '../../context/CartContext';
+import { useCartStore } from '../../store/useCartStore';
 import { toast } from 'react-hot-toast';
 
 interface QuickViewModalProps {
@@ -13,7 +13,7 @@ interface QuickViewModalProps {
 }
 
 export const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose }) => {
-  const { addToCart } = useCart();
+  const { addItem: addToCart } = useCartStore();
 
   React.useEffect(() => {
     if (isOpen) {

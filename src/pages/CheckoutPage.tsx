@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { useCart } from '../context/CartContext';
+import { useCartStore } from '../store/useCartStore';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, runTransaction, addDoc } from 'firebase/firestore';
 import { formatPrice } from '../lib/utils';
-import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock } from 'lucide-react';
+import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const CheckoutPage: React.FC = () => {
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart } = useCartStore();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -22,10 +22,24 @@ export const CheckoutPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: profile?.displayName || '',
     email: user?.email || '',
-    cardNum: '',
-    expiry: '',
-    cvv: ''
+    phone: '',
+    gameId: '',
   });
+
+  const sendToWhatsApp = () => {
+    const message = `طلب جديد من ${formData.name}
+البريد: ${formData.email}
+الجوال: ${formData.phone}
+معرف اللعبة: ${formData.gameId || 'غير متوفر'}
+--------------------------
+المنتجات:
+${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${formatPrice(item.price * item.quantity)}`).join('\n')}
+--------------------------
+الإجمالي: ${formatPrice(total)}
+    `;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/966XXXXXXXXX?text=${encodedMessage}`, '_blank');
+  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +64,7 @@ export const CheckoutPage: React.FC = () => {
         }
 
         // 2. Check stock for each item
-        const productRefs = items.map(item => doc(db, 'products', item.productId));
+        const productRefs = items.map(item => doc(db, 'products', item.id));
         const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
 
         for (let i = 0; i < productDocs.length; i++) {
@@ -77,17 +91,32 @@ export const CheckoutPage: React.FC = () => {
         // 5. Create Order
         transaction.set(doc(db, 'orders', orderId), {
             userId: user?.uid,
-            items,
+            items: items.map(item => ({
+              productId: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              imageUrl: item.imageUrl
+            })),
             total,
             status: 'pending',
             paymentMethod: 'wallet',
             createdAt: serverTimestamp(),
             customerEmail: formData.email,
-            customerName: formData.name
+            customerName: formData.name,
+            customerPhone: formData.phone,
+            gameId: formData.gameId
         });
       });
 
       toast.success('تم الدفع بنجاح من المحفظة');
+      
+      // WhatsApp Integration (Optional but recommended in the prompt)
+      const confirmWhatsApp = window.confirm('تم تسجيل الطلب في النظام. هل تود إرسال تفاصيل الطلب مباشرة لواتساب الإدارة لسرعة التنفيذ؟');
+      if (confirmWhatsApp) {
+        sendToWhatsApp();
+      }
+
       clearCart();
       setSuccess(true);
     } catch (error: any) {
@@ -218,34 +247,55 @@ export const CheckoutPage: React.FC = () => {
               </div>
               
               <div className="space-y-4 pt-4 border-t border-slate-800">
-                <h3 className="text-sm font-bold text-slate-300">معلومات الاتصال</h3>
-                <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-400">الاسم الكامل</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="checkout-input"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-400">البريد الإلكتروني</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="checkout-input"
-                    required
-                  />
+                <h3 className="text-sm font-bold text-slate-300">معلومات التواصل واللاعب</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-400">الاسم الكامل</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="checkout-input"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-400">البريد الإلكتروني</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="checkout-input"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-400">رقم الهاتف (واتساب)</label>
+                    <input
+                      type="tel"
+                      placeholder="9665XXXXXXXX"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="checkout-input"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-400">معرّف اللعبة / ID (اختياري)</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: 54321098"
+                      value={formData.gameId}
+                      onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
+                      className="checkout-input"
+                    />
+                  </div>
                 </div>
               </div>
 
             </div>
-          </div>
 
-          <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4 p-4 bg-emerald-600/10 border border-emerald-500/20 rounded-2xl w-full">
                 <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
                 <p className="text-xs text-slate-400 leading-relaxed">

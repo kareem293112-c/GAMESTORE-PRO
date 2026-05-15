@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart, Star, Heart, Monitor, Zap, Eye } from 'lucide-react';
 import { Product } from '../../types';
 import { formatPrice } from '../../lib/utils';
-import { useCart } from '../../context/CartContext';
+import { useCartStore } from '../../store/useCartStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QuickViewModal } from './QuickViewModal';
@@ -12,7 +12,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToCart } = useCart();
+  const { addItem: addToCart } = useCartStore();
   const navigate = useNavigate();
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);

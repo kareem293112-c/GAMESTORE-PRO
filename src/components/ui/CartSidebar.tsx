@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShoppingCart, X, Plus, Minus, Trash2, ArrowLeft } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { useCartStore } from '../../store/useCartStore';
 import { formatPrice } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,7 @@ interface CartSidebarProps {
 }
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
-  const { items, removeFromCart, updateQuantity, total, itemCount } = useCart();
+  const { items, removeItem: removeFromCart, updateQuantity, total, itemCount } = useCartStore();
 
   React.useEffect(() => {
     if (isOpen) {
