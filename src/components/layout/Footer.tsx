@@ -159,13 +159,7 @@ export const Footer: React.FC = () => {
             © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
           
-                  {/* Bottom Section */}
-        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-slate-500 text-sm text-center md:text-start px-2">
-            © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
-          </p>
-          
-          {/* قسم حماية وتأمين شعارات الدفع الموحدة باستخدام رابط GitHub المباشر الحقيقي الخاص بك */}
+          {/* قسم حماية وتأمين شعارات الدفع الموحدة المأخوذة مباشرة من مستودعك */}
           <div className="flex items-center gap-4 justify-center flex-wrap bg-slate-900/40 px-5 py-2 rounded-2xl border border-slate-800/40">
             {/* 3D Secure */}
             <div className="border border-slate-700/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider h-8">
@@ -173,7 +167,7 @@ export const Footer: React.FC = () => {
               3D SECURE
             </div>
 
-            {/* استدعاء شريط الشعارات الملون الكامل والمستقر من مستودعك مباشرة لمنع أي انكسار بصري */}
+            {/* شريط الشعارات الموحد الخاص بمستودعك */}
             <img 
               src="https://github.com" 
               alt="Payment Methods" 
