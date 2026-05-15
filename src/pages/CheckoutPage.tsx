@@ -38,7 +38,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
 الإجمالي: ${formatPrice(total)}
     `;
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/966XXXXXXXXX?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/905360167664?text=${encodedMessage}`, '_blank');
   };
 
   const handleCheckout = async (e: React.FormEvent) => {
@@ -243,7 +243,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                     </p>
                     <button 
                       type="button"
-                      onClick={() => window.open('https://wa.me/966XXXXXXXXX', '_blank')}
+                      onClick={() => window.open('https://wa.me/905360167664', '_blank')}
                       className="mt-2 w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black py-1.5 rounded-lg border border-emerald-600/30 transition-all uppercase"
                     >
                       شحن المحفظة عبر واتساب

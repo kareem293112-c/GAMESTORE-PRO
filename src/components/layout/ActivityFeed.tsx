@@ -20,20 +20,33 @@ export const ActivityFeed: React.FC = () => {
   const { language, t } = useLanguage();
 
   useEffect(() => {
-    // Fetch last 10 completed orders
+    // 1. Fetch real completed orders from Firestore
     const q = query(
       collection(db, 'orders'),
       where('status', '==', 'completed'),
       orderBy('createdAt', 'desc'),
-      limit(10)
+      limit(20)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
       const newActivities = snapshot.docs.map(doc => {
         const data = doc.data();
-        
-        // Name masking: "Maryam Najjar" -> "Maryam N."
         const rawName = data.customerName || t('activity.fallbackUser');
+        const product = data.items?.[0]?.name || t('activity.fallbackProduct');
+        const timestamp = data.createdAt?.toDate() || new Date();
+        
+        // Filter out orders older than 30 days to keep it "fresh" and real
+        // And filter out specific unwanted patterns like mock data
+        if (timestamp < thirtyDaysAgo || 
+            rawName.includes('ABDULKERIM') || 
+            rawName.includes('Kareem') || 
+            (rawName.includes('ABN s.') && product.includes('Windows'))) {
+          return null;
+        }
+
         const nameParts = rawName.trim().split(' ');
         let maskedName = rawName;
         if (nameParts.length > 1) {
@@ -41,23 +54,17 @@ export const ActivityFeed: React.FC = () => {
           maskedName = `${nameParts[0]} ${lastChar}.`;
         }
 
-        const product = data.items?.[0]?.name || t('activity.fallbackProduct');
-        
-        // Filter out specific requested activity (PERMANENT FILTER - DO NOT REMOVE)
-        if (rawName.includes('Kareem') || (rawName.includes('ABN s.') && product.includes('Windows'))) {
-          return null;
-        }
-
         return {
           id: doc.id,
           user: maskedName,
           product: product,
-          timestamp: data.createdAt?.toDate() || new Date()
+          timestamp: timestamp
         };
       }).filter((activity): activity is Activity => activity !== null);
 
-      if (newActivities.length > 0) {
-        setActivities(newActivities);
+      setActivities(newActivities);
+      // Trigger visibility only if we have at least 3 orders
+      if (newActivities.length >= 3) {
         setIsVisible(true);
       }
     }, (error) => {
@@ -68,7 +75,11 @@ export const ActivityFeed: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    if (activities.length === 0) return;
+    // Hide if fewer than 3 real orders to prevent "empty" look
+    if (activities.length < 3) {
+      setIsVisible(false);
+      return;
+    }
 
     const interval = setInterval(() => {
       setIsVisible(false);
@@ -104,7 +115,7 @@ export const ActivityFeed: React.FC = () => {
     }
   };
 
-  if (activities.length === 0) return null;
+  if (activities.length < 3) return null;
 
   const current = activities[currentIndex];
 
