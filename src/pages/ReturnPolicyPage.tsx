@@ -1,14 +1,13 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 
-const DistanceSalesPage: React.FC = () => {
+export const DistanceSalesPage: React.FC = () => {
   const today = new Date().toLocaleDateString('tr-TR');
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 py-16 px-4">
       <div className="max-w-3xl mx-auto">
 
-        {/* Header */}
         <div className="flex items-center gap-3 mb-10">
           <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
             <FileText className="w-6 h-6 text-indigo-400" />
@@ -21,7 +20,6 @@ const DistanceSalesPage: React.FC = () => {
 
         <div className="space-y-6 text-sm leading-relaxed">
 
-          {/* Parties */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-4">MADDE 1 – TARAFLAR</h2>
             <div className="space-y-4">
@@ -42,7 +40,6 @@ const DistanceSalesPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Subject */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 2 – SÖZLEŞMENİN KONUSU</h2>
             <p className="text-slate-400">
@@ -52,7 +49,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Products */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 3 – ÜRÜN BİLGİLERİ VE FİYATLAR</h2>
             <p className="text-slate-400">
@@ -62,7 +58,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Payment */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 4 – ÖDEME</h2>
             <p className="text-slate-400">
@@ -72,7 +67,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Delivery */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 5 – TESLİMAT</h2>
             <p className="text-slate-400">
@@ -83,7 +77,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Cancellation */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-l-2 border-l-red-500">
             <h2 className="text-white font-bold text-base mb-3">MADDE 6 – İPTAL VE İADE HAKKI</h2>
             <div className="bg-red-950/30 rounded-xl p-4 border border-red-900/50 mb-3">
@@ -101,7 +94,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Seller responsibilities */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 7 – SATICI'NIN YÜKÜMLÜLÜKLERİ</h2>
             <ul className="list-disc list-inside space-y-1 text-slate-400">
@@ -112,7 +104,6 @@ const DistanceSalesPage: React.FC = () => {
             </ul>
           </section>
 
-          {/* Buyer responsibilities */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 8 – ALICI'NIN YÜKÜMLÜLÜKLERİ</h2>
             <ul className="list-disc list-inside space-y-1 text-slate-400">
@@ -123,7 +114,6 @@ const DistanceSalesPage: React.FC = () => {
             </ul>
           </section>
 
-          {/* Disputes */}
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-white font-bold text-base mb-3">MADDE 9 – UYUŞMAZLIK ÇÖZÜMÜ</h2>
             <p className="text-slate-400">
@@ -141,7 +131,6 @@ const DistanceSalesPage: React.FC = () => {
             </p>
           </section>
 
-          {/* Date */}
           <div className="text-center text-slate-600 text-xs pt-4">
             Bu sözleşme {today} tarihinde yürürlüğe girmiştir. © Gamestore Pro — ABDULKERIM ĞAREZ
           </div>
@@ -151,5 +140,3 @@ const DistanceSalesPage: React.FC = () => {
     </div>
   );
 };
-
-export default DistanceSalesPage;
