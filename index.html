@@ -4,29 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- اسم الموقع الاحترافي الذي يظهر في أعلى المتصفح -->
+    <!-- اسم الموقع التجاري الرسمي الذي يظهر في علامة التبويب -->
     <title>Gamestore Pro | متجرك الأول للألعاب والبطاقات الرقمية</title>
     
-    <!-- وصف الموقع لمحركات البحث (SEO) ليظهر بشكل رسمي في جوجل -->
-    <meta name="description" content="اكتشف أفضل عروض الألعاب، شحن البطاقات الرقمية، وحسابات الألعاب المميزة في متجر Gamestore Pro. تسوق آمن وتسليم فوري." />
+    <!-- وصف احترافي لمحركات البحث لمنع ظهور نصوص الذكاء الاصطناعي في جوجل -->
+    <meta name="description" content="منصتك الموثوقة لشحن الألعاب، شراء البطاقات الرقمية، وحسابات الألعاب المميزة بأسعار تنافسية وتسليم فوري." />
     
-    <!-- أيقونة الموقع الصغيرة (Favicon) - استبدل المثار بأيقونتك لاحقاً -->
+    <!-- ربط أيقونة المتجر (Favicon) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <!-- روابط تحسين الخطوط والعرض (اختياري حسب التصميم) -->
+    <!-- استدعاء خط "Cairo" الاحترافي المناسب لـ واجهات الألعاب العربية -->
     <link rel="preconnect" href="https://googleapis.com">
     <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <style>
-      /* تطبيق خط احترافي للموقع بالكامل */
-      body {
-        font-family: 'Cairo', sans-serif;
+      /* تطبيق الخط الاحترافي على كامل الموقع وتنعيم الحواف */
+      * {
+        font-family: 'Cairo', sans-serif !important;
       }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    <!-- السطر البرمجي الأساسي لتشغيل تطبيق React/TypeScript الخاص بك -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
