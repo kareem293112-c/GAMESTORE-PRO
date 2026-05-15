@@ -159,43 +159,25 @@ export const Footer: React.FC = () => {
             © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
           
-          {/* Payment Section - تم دمج الروابط المباشرة لـ GitHub المفتوحة والآمنة 100% */}
-          <div className="flex items-center gap-4 justify-center flex-wrap bg-slate-900/40 px-4 py-2 rounded-2xl border border-slate-800/40">
+                  {/* Bottom Section */}
+        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-slate-500 text-sm text-center md:text-start px-2">
+            © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
+          </p>
+          
+          {/* قسم حماية وتأمين شعارات الدفع الموحدة باستخدام رابط GitHub المباشر الحقيقي الخاص بك */}
+          <div className="flex items-center gap-4 justify-center flex-wrap bg-slate-900/40 px-5 py-2 rounded-2xl border border-slate-800/40">
             {/* 3D Secure */}
-            <div className="border border-slate-700/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider h-7">
+            <div className="border border-slate-700/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider h-8">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               3D SECURE
             </div>
 
-            {/* Visa */}
+            {/* استدعاء شريط الشعارات الملون الكامل والمستقر من مستودعك مباشرة لمنع أي انكسار بصري */}
             <img 
-              src="https://githubusercontent.com" 
-              alt="Visa" 
-              className="h-4 w-auto brightness-110" 
-              referrerPolicy="no-referrer" 
-            />
-
-            {/* Mastercard */}
-            <img 
-              src="https://githubusercontent.com" 
-              alt="Mastercard" 
-              className="h-5 w-auto" 
-              referrerPolicy="no-referrer" 
-            />
-
-            {/* Troy */}
-            <img 
-              src="https://githubusercontent.com" 
-              alt="Troy" 
-              className="h-4 w-auto" 
-              referrerPolicy="no-referrer" 
-            />
-
-            {/* Maestro */}
-            <img 
-              src="https://githubusercontent.com" 
-              alt="Maestro" 
-              className="h-5 w-auto" 
+              src="https://github.com" 
+              alt="Payment Methods" 
+              className="h-6 w-auto brightness-110 object-contain" 
               referrerPolicy="no-referrer" 
             />
           </div>
