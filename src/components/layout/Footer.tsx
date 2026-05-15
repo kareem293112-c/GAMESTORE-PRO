@@ -145,8 +145,8 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-3 text-slate-400 text-sm">
                 <MessageCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
                 <div>
-                   <p className="font-bold text-slate-200" dir="ltr">+90 536 016 76 64</p>
-                   <p className="text-xs">{language === 'ar' ? 'متجر: Gamestore Pro' : 'Store: Gamestore Pro'}</p>
+                  <p className="font-bold text-slate-200" dir="ltr">+90 536 016 76 64</p>
+                  <p className="text-xs">{language === 'ar' ? 'متجر: Gamestore Pro' : 'Store: Gamestore Pro'}</p>
                 </div>
               </div>
             </div>
@@ -158,21 +158,22 @@ export const Footer: React.FC = () => {
           <p className="text-slate-500 text-sm text-center md:text-start px-2">
             © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
-          
-          {/* قسم حماية وتأمين شعارات الدفع الموحدة المأخوذة مباشرة من مستودعك */}
+
           <div className="flex items-center gap-4 justify-center flex-wrap bg-slate-900/40 px-5 py-2 rounded-2xl border border-slate-800/40">
-            {/* 3D Secure */}
+            {/* 3D Secure Badge */}
             <div className="border border-slate-700/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider h-8">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               3D SECURE
             </div>
 
-            {/* شريط الشعارات الموحد الخاص بمستودعك */}
-            <img 
-              src="https://github.com" 
-              alt="Payment Methods" 
-              className="h-6 w-auto brightness-110 object-contain" 
-              referrerPolicy="no-referrer" 
+            {/* ✅ صورة Visa - الرابط المباشر الصحيح من GitHub raw */}
+            <img
+              src="https://raw.githubusercontent.com/kareem293112-c/-/main/212-2128583_visa-logo-png-image-background-visa-visa-electron%20(1).png"
+              alt="Visa"
+              className="h-6 w-auto object-contain brightness-110"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           </div>
         </div>
