@@ -11,13 +11,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export const CheckoutPage: React.FC = () => {
-  const { items, total, clearCart } = useCartStore();
+  const { items, clearCart } = useCartStore();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const canUseWallet = (profile?.balance || 0) >= total;
+  const cartTotal = items.reduce(
+    (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
+    0
+  );
+
+  const canUseWallet = (profile?.balance || 0) >= cartTotal;
 
   const [formData, setFormData] = useState({
     name: profile?.displayName || '',
@@ -35,7 +40,7 @@ export const CheckoutPage: React.FC = () => {
 المنتجات:
 ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${formatPrice(item.price * item.quantity)}`).join('\n')}
 --------------------------
-الإجمالي: ${formatPrice(total)}
+الإجمالي: ${formatPrice(cartTotal)}
     `;
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/905360167664?text=${encodedMessage}`, '_blank');
@@ -59,7 +64,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
         if (!userData) throw new Error('User not found');
         
         const balance = userData.balance || 0;
-        if (balance < total) {
+        if (balance < cartTotal) {
           throw new Error('insufficient_balance');
         }
 
@@ -77,7 +82,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
 
         // 3. Update Balance
         transaction.update(userDocRef, {
-            balance: balance - total,
+            balance: balance - cartTotal,
             updatedAt: serverTimestamp()
         });
 
@@ -98,7 +103,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               quantity: item.quantity,
               imageUrl: item.imageUrl
             })),
-            total,
+            total: cartTotal,
             status: 'completed',
             paymentMethod: 'wallet',
             createdAt: serverTimestamp(),
@@ -282,7 +287,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                     <label className="text-sm font-bold text-slate-400">رقم الهاتف (واتساب)</label>
                     <input
                       type="tel"
-                      placeholder="9665XXXXXXXX"
+                      placeholder="05XXXXXXXX"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="checkout-input"
@@ -327,7 +332,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               {loading ? (
                 <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>إتمام الدفع {formatPrice(total)} <ArrowRight className="w-5 h-5 rotate-180" /></>
+                <>إتمام الدفع {formatPrice(cartTotal)} <ArrowRight className="w-5 h-5 rotate-180" /></>
               )}
             </button>
           </form>
@@ -358,7 +363,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
             <div className="pt-6 border-t border-slate-800 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">المجموع الفرعي</span>
-                <span className="text-slate-200 font-bold">{formatPrice(total)}</span>
+                <span className="text-slate-200 font-bold">{formatPrice(cartTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">ضريبة القيمة المضافة (15%)</span>
@@ -366,7 +371,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-slate-800">
                 <span className="text-lg font-bold text-white">شامل الضريبة:</span>
-                <span className="text-2xl font-black text-indigo-400">{formatPrice(total)}</span>
+                <span className="text-2xl font-black text-indigo-400">{formatPrice(cartTotal)}</span>
               </div>
             </div>
 
