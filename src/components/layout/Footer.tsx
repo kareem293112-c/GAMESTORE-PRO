@@ -159,37 +159,45 @@ export const Footer: React.FC = () => {
             © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
           
-          {/* حزمة شعارات الدفع والأمان الرسمية الحية والمستقرة 100% */}
-          <div className="flex items-center gap-6 justify-center flex-wrap">
+          {/* ربط شبكات الدفع المستخرجة مباشرة من الرابط المعتمد مع توحيد الأبعاد البصرية */}
+          <div className="flex items-center gap-5 justify-center flex-wrap bg-slate-900/40 px-4 py-2 rounded-2xl border border-slate-800/40">
             {/* 3D Secure */}
-            <div className="border border-slate-700/60 rounded-xl px-3 py-1.5 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider">
+            <div className="border border-slate-700/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider h-7">
               <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
               3D SECURE
             </div>
 
-            {/* TROY - الشعار الرسمي الأبيض المستقر */}
+            {/* Visa */}
             <img 
-              src="https://githubusercontent.com" 
-              alt="Troy" 
-              className="h-5 w-auto" 
+              src="https://wikimedia.org" 
+              alt="Visa" 
+              className="h-4 w-auto brightness-110"
               referrerPolicy="no-referrer" 
             />
 
-            {/* MasterCard - الشعار الملون الأصلي عالي الجودة والشفاف */}
+            {/* Mastercard */}
             <img 
               src="https://wikimedia.org" 
               alt="Mastercard" 
-              className="h-6 w-auto" 
+              className="h-5 w-auto"
               referrerPolicy="no-referrer" 
             />
 
-            {/* VISA - الشعار الأبيض الشفاف الاحترافي المفتوح عالمياً */}
+            {/* Cirrus */}
             <img 
-              src="https://githubusercontent.com" 
-              alt="Visa" 
-              className="h-5 w-auto" 
+              src="https://wikimedia.org" 
+              alt="Cirrus" 
+              className="h-5 w-auto"
+              referrerPolicy="no-referrer" 
+            />
+
+            {/* Maestro */}
+            <img 
+              src="https://wikimedia.org" 
+              alt="Maestro" 
+              className="h-5 w-auto"
               referrerPolicy="no-referrer" 
             />
           </div>
