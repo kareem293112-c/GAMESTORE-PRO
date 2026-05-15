@@ -117,9 +117,12 @@ export const OrdersPage: React.FC = () => {
                       <div className={`flex items-center gap-2 mt-1 px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                         order.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                         order.status === 'cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                        'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
+                        order.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' :
+                        'bg-slate-500/10 text-slate-400 border border-slate-500/20'
                       }`}>
-                        {order.status === 'completed' ? 'تم التنفيذ' : order.status === 'cancelled' ? 'ملغي' : 'قيد المعالجة'}
+                        {order.status === 'completed' ? 'تم التنفيذ' : 
+                         order.status === 'cancelled' ? 'ملغي' : 
+                         order.status === 'pending' ? 'قيد الانتظار' : 'جاري المعالجة'}
                       </div>
                     </div>
                   </div>

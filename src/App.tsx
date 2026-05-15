@@ -19,12 +19,12 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { DeliveryPage } from './pages/DeliveryPage';
 import { DistanceSalesPage } from './pages/DistanceSalesPage';
+import { ReturnPolicyPage } from './pages/ReturnPolicyPage';
 import { SecurityPage } from './pages/SecurityPage';
 import { TermsPage } from './pages/TermsPage';
 import { SupportPage } from './pages/SupportPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
-
 import { OrdersPage } from './pages/OrdersPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
@@ -76,6 +76,7 @@ const AppContent: React.FC = () => {
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/delivery" element={<DeliveryPage />} />
           <Route path="/distance-sales" element={<DistanceSalesPage />} />
+          <Route path="/return-policy" element={<ReturnPolicyPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/security" element={<SecurityPage />} />
           <Route path="/terms" element={<TermsPage />} />

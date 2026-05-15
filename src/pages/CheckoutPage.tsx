@@ -27,15 +27,11 @@ export const CheckoutPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: profile?.displayName || '',
     email: user?.email || '',
-    phone: '',
-    gameId: '',
   });
 
   const sendToWhatsApp = () => {
     const message = `طلب جديد من ${formData.name}
 البريد: ${formData.email}
-الجوال: ${formData.phone}
-معرف اللعبة: ${formData.gameId || 'غير متوفر'}
 --------------------------
 المنتجات:
 ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${formatPrice(item.price * item.quantity)}`).join('\n')}
@@ -104,13 +100,11 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               imageUrl: item.imageUrl
             })),
             total: cartTotal,
-            status: 'completed',
+            status: 'pending',
             paymentMethod: 'wallet',
             createdAt: serverTimestamp(),
             customerEmail: formData.email,
             customerName: formData.name,
-            customerPhone: formData.phone,
-            gameId: formData.gameId
         });
       });
 
@@ -261,7 +255,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               </div>
               
               <div className="space-y-4 pt-4 border-t border-slate-800">
-                <h3 className="text-sm font-bold text-slate-300">معلومات التواصل واللاعب</h3>
+                <h3 className="text-sm font-bold text-slate-300">معلومات التواصل</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-400">الاسم الكامل</label>
@@ -281,27 +275,6 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="checkout-input"
                       required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-400">رقم الهاتف (واتساب)</label>
-                    <input
-                      type="tel"
-                      placeholder="05XXXXXXXX"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="checkout-input"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-400">معرّف اللعبة / ID (اختياري)</label>
-                    <input
-                      type="text"
-                      placeholder="مثال: 54321098"
-                      value={formData.gameId}
-                      onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
-                      className="checkout-input"
                     />
                   </div>
                 </div>

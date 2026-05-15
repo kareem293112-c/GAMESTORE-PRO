@@ -9,12 +9,9 @@ import {
   Mail, 
   ShieldCheck, 
   Zap, 
-  Store,
-  CreditCard,
   MessageCircle,
   Gamepad2,
   ShoppingCart,
-  Clock,
   Tag
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
@@ -49,7 +46,7 @@ export const Footer: React.FC = () => {
             whileHover={{ y: -5 }}
             className="flex items-center gap-4 group bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300"
           >
-            <div className="w-14 h-14 bg-emerald-600/10 text-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+            <div className="w-14 h-14 bg-emerald-600/10 text-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-[0_0_20_px_rgba(16,185,129,0.1)]">
               <ShoppingCart className="w-7 h-7" />
             </div>
             <div>
@@ -103,7 +100,7 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-1 space-y-6">
             <Link to="/" className="flex items-center gap-2">
               <Zap className="w-8 h-8 text-indigo-500 fill-indigo-500" />
-              <span className="text-2xl font-bold text-white tracking-tight">GamersStore</span>
+              <span className="text-2xl font-bold text-white tracking-tight">Gamestore Pro</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
               {t('footer.about')}
@@ -119,7 +116,6 @@ export const Footer: React.FC = () => {
               <li><Link to="/?category=steam" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'بطاقات ستيم' : 'Steam Gift Cards'}</Link></li>
               <li><Link to="/?category=roblox" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'روبلوكس روبوكس' : 'Roblox Robux'}</Link></li>
               <li><Link to="/?category=GTA" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'GTA 5 أونلاين' : 'GTA 5 Online'}</Link></li>
-              <li><Link to="/?category=PSN" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'بلايستيشن بلس' : 'PlayStation Plus'}</Link></li>
             </ul>
           </div>
 
@@ -134,15 +130,14 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 3: Information */}
+          {/* Column 3: Legal Information */}
           <div>
-            <h4 className="text-white font-bold mb-6 text-lg">{t('footer.information')}</h4>
+            <h4 className="text-white font-bold mb-6 text-lg">{language === 'tr' ? 'Yasal Bilgiler' : (language === 'ar' ? 'معلومات قانونية' : 'Legal Information')}</h4>
             <ul className="space-y-4 text-sm">
-              <li><Link to="/about" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.about')}</Link></li>
-              <li><Link to="/delivery" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.delivery')}</Link></li>
-              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.privacy')}</Link></li>
-              <li><Link to="/distance-sales" className="text-slate-400 hover:text-indigo-400 transition-colors">{t('footer.links.distance')}</Link></li>
-              <li><Link to="/support" className="text-slate-400 hover:text-indigo-400 transition-colors">{language === 'ar' ? 'الدعم الفني' : 'Technical Support'}</Link></li>
+              <li><Link to="/distance-sales" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">Mesafeli Satış Sözleşmesi</Link></li>
+              <li><Link to="/return-policy" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">İptal ve İade Koşulları</Link></li>
+              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">{language === 'tr' ? 'Gizlilik Politikası' : t('footer.links.privacy')}</Link></li>
+              <li><Link to="/terms" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">{language === 'tr' ? 'Kullanım Koşulları' : t('footer.links.terms')}</Link></li>
             </ul>
           </div>
 
@@ -164,8 +159,8 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-3 text-slate-400 text-sm">
                 <MessageCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-slate-200">{language === 'ar' ? 'الدعم المباشر:' : 'Live Support:'}</p>
-                  <p>{language === 'ar' ? '11:00 صباحاً - 11:00 مساءً' : '11:00 AM - 11:00 PM'}</p>
+                   <p className="font-bold text-slate-200">+90 536 016 76 64</p>
+                   <p className="text-xs">{language === 'ar' ? 'متجر: Gamestore Pro' : 'Store: Gamestore Pro'}</p>
                 </div>
               </div>
             </div>
@@ -175,37 +170,25 @@ export const Footer: React.FC = () => {
         {/* Bottom Section */}
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-slate-500 text-sm text-center md:text-start px-2">
-            {t('footer.rights')}
+            © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 font-mono">
-            <img 
-              src="https://raw.githubusercontent.com/kareem293112-c/GAMESTORE-PRO/main/logo_band_colored@1X.png" 
-              alt="Payment Methods" 
-              className="h-8 w-auto" 
-              referrerPolicy="no-referrer"
-            />
+          
+          <div className="flex items-center gap-6 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 w-auto" referrerPolicy="no-referrer" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 w-auto" referrerPolicy="no-referrer" />
+            <div className="flex items-center gap-1 font-black text-white text-xs italic">
+               <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center not-italic mr-1">
+                 <span className="text-[8px] text-blue-950 font-bold">TROY</span>
+               </span>
+               TROY
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-slate-400 border border-slate-700 px-2 py-1 rounded font-bold">
+               <ShieldCheck className="w-3 h-3 text-indigo-500" />
+               3D SECURE
+            </div>
           </div>
         </div>
       </div>
     </footer>
   );
 };
-
-const PlusSquareIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-    <line x1="12" y1="8" x2="12" y2="16"/>
-    <line x1="8" y1="12" x2="16" y2="12"/>
-  </svg>
-);
