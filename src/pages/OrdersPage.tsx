@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestor
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Order } from '../types';
-import { Package, Clock, CreditCard, Loader2, Search, ArrowRight } from 'lucide-react';
+import { Package, Clock, CreditCard, Loader2, Search, ArrowRight, Calendar } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
@@ -42,6 +42,12 @@ export const OrdersPage: React.FC = () => {
     order.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const formatDate = (date: any) => {
+    if (!date) return '...';
+    const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
+    return d.toLocaleString('ar-SA');
+  };
+
   return (
     <div className="min-h-screen bg-[#0f172a] py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -50,7 +56,7 @@ export const OrdersPage: React.FC = () => {
             <h1 className="text-3xl font-black text-white flex items-center gap-3">
               <Package className="w-8 h-8 text-indigo-500" /> طلباتي
             </h1>
-            <p className="text-slate-400 mt-1">تتبع حالة ملفاتك وطلباتكDigital السابقة</p>
+            <p className="text-slate-400 mt-1">تتبع حالة منتجاتك وطلباتك الرقمية السابقة</p>
           </div>
 
           <div className="relative w-full md:w-64">
@@ -156,7 +162,7 @@ export const OrdersPage: React.FC = () => {
                 <div className="p-6 bg-slate-800/30 border-t border-slate-800 flex items-center justify-between">
                   <div className="text-slate-500 text-[10px] font-bold flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" /> 
-                    {new Date(order.createdAt?.seconds * 1000).toLocaleString('ar-SA')}
+                    {formatDate(order.createdAt)}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 text-xs">إجمالي الطلب:</span>
@@ -171,7 +177,3 @@ export const OrdersPage: React.FC = () => {
     </div>
   );
 };
-
-const Calendar = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-);

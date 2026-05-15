@@ -99,7 +99,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
               imageUrl: item.imageUrl
             })),
             total,
-            status: 'pending',
+            status: 'completed',
             paymentMethod: 'wallet',
             createdAt: serverTimestamp(),
             customerEmail: formData.email,
@@ -111,17 +111,11 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
 
       toast.success('تم الدفع بنجاح من المحفظة');
       
-      // WhatsApp Integration (Optional but recommended in the prompt)
-      const confirmWhatsApp = window.confirm('تم تسجيل الطلب في النظام. هل تود إرسال تفاصيل الطلب مباشرة لواتساب الإدارة لسرعة التنفيذ؟');
-      if (confirmWhatsApp) {
-        sendToWhatsApp();
-      }
-
       clearCart();
       setSuccess(true);
     } catch (error: any) {
         if (error.message === 'insufficient_balance') {
-            toast.error('رصيدك غير كافٍ لإتمام العملية. يرجى شحن محفظتك أولاً.');
+            toast.error('رصيدك الحالي غير كافٍ، يرجى التواصل مع الإدارة لشحن محفظتك.');
         } else if (error.message.startsWith('insufficient_stock_')) {
             const productName = error.message.replace('insufficient_stock_', '');
             toast.error(`عذراً، الكمية المتوفرة من ${productName} غير كافية.`);
@@ -241,6 +235,21 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                     </span>
                   </div>
                 </div>
+                {!canUseWallet && (
+                  <div className="mt-3 pt-3 border-t border-red-500/20">
+                    <p className="text-red-400 text-xs font-bold flex items-center justify-end gap-1">
+                      رصيدك الحالي غير كافٍ، يرجى التواصل مع الإدارة لشحن محفظتك
+                      <MessageSquare className="w-3 h-3" />
+                    </p>
+                    <button 
+                      type="button"
+                      onClick={() => window.open('https://wa.me/966XXXXXXXXX', '_blank')}
+                      className="mt-2 w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black py-1.5 rounded-lg border border-emerald-600/30 transition-all uppercase"
+                    >
+                      شحن المحفظة عبر واتساب
+                    </button>
+                  </div>
+                )}
                 <div className="absolute top-0 right-0 w-8 h-8 bg-emerald-600 flex items-center justify-center rounded-bl-xl">
                   <CheckCircle2 className="w-4 h-4 text-white" />
                 </div>
