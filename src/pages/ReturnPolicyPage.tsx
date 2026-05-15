@@ -1,138 +1,86 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
-export const DistanceSalesPage: React.FC = () => {
-  const today = new Date().toLocaleDateString('tr-TR');
-
+export const ReturnPolicyPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 py-16 px-4">
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center gap-3 mb-10">
           <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-            <FileText className="w-6 h-6 text-indigo-400" />
+            <RefreshCw className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Mesafeli Satış Sözleşmesi</h1>
-            <p className="text-slate-500 text-sm mt-0.5">6502 Sayılı Tüketicinin Korunması Hakkında Kanun kapsamında hazırlanmıştır.</p>
+            <h1 className="text-2xl font-bold text-white">İptal ve İade Koşulları</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Cancellation &amp; Return Policy</p>
           </div>
         </div>
 
         <div className="space-y-6 text-sm leading-relaxed">
 
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-4">MADDE 1 – TARAFLAR</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-indigo-400 font-semibold mb-1">SATICI:</p>
-                <ul className="space-y-1 text-slate-400">
-                  <li><span className="text-slate-300">Unvan:</span> ABDULKERIM ĞAREZ</li>
-                  <li><span className="text-slate-300">Vergi No:</span> 4541721451</li>
-                  <li><span className="text-slate-300">E-posta:</span> karmo2931@gmail.com</li>
-                  <li><span className="text-slate-300">Telefon:</span> +90 536 016 76 64</li>
-                  <li><span className="text-slate-300">Platform:</span> Gamestore Pro — gamestore-pro-u1v1.onrender.com</li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-emerald-400 font-semibold mb-1">ALICI:</p>
-                <p className="text-slate-400">Siteye üye olan veya sipariş veren gerçek/tüzel kişi (bundan böyle "Alıcı" olarak anılacaktır).</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 2 – SÖZLEŞMENİN KONUSU</h2>
-            <p className="text-slate-400">
-              Bu sözleşme, Alıcı'nın Gamestore Pro web sitesi üzerinden elektronik ortamda sipariş verdiği
-              dijital ürünlerin (oyun kodu, gift card, oyun içi para birimi, dijital pin vb.) satışı ve
-              teslimatına ilişkin karşılıklı hak ve yükümlülükleri düzenlemektedir.
+          <section className="bg-amber-950/30 rounded-2xl p-6 border border-amber-800/50">
+            <h2 className="text-amber-300 font-bold text-base mb-3">⚠️ Dijital Ürünler Hakkında</h2>
+            <p className="text-slate-300">
+              Gamestore Pro'da satılan tüm ürünler{' '}
+              <strong className="text-white">dijital niteliktedir</strong>{' '}
+              (oyun kodu, gift card, aktivasyon anahtarı, oyun içi para birimi vb.).
+              Mesafeli Sözleşmeler Yönetmeliği Madde 15/ğ uyarınca, elektronik ortamda anında teslim
+              edilen dijital içerikler tüketicinin onayıyla teslim edildiğinden{' '}
+              <strong className="text-amber-400">cayma hakkı kapsamı dışındadır.</strong>
             </p>
           </section>
 
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 3 – ÜRÜN BİLGİLERİ VE FİYATLAR</h2>
-            <p className="text-slate-400">
-              Satışa sunulan ürünlerin özellikleri, fiyatları ve açıklamaları site üzerinde ilgili ürün
-              sayfasında yer almaktadır. Tüm fiyatlara KDV dahildir. Satıcı, fiyatları önceden
-              bildirmeksizin güncelleme hakkını saklı tutar; ancak sipariş anındaki fiyat geçerlidir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 4 – ÖDEME</h2>
-            <p className="text-slate-400">
-              Ödemeler güvenli ödeme altyapısı üzerinden kredi kartı, banka kartı veya diğer desteklenen
-              yöntemlerle gerçekleştirilir. Ödeme bilgileri Satıcı tarafından saklanmaz;
-              PCI-DSS uyumlu ödeme işlemcisi tarafından işlenir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 5 – TESLİMAT</h2>
-            <p className="text-slate-400">
-              Dijital ürünler, ödemenin onaylanmasının ardından{' '}
-              <span className="text-white font-semibold">anında ve otomatik olarak</span> Alıcı'nın
-              kayıtlı e-posta adresine veya hesap paneline iletilir. Teslimat süresi en fazla 24 saattir;
-              teknik aksaklık halinde Alıcı bilgilendirilir.
-            </p>
+            <h2 className="text-white font-bold text-base mb-3">✅ İptal Mümkün Olan Durumlar</h2>
+            <ul className="list-disc list-inside space-y-2 text-slate-400">
+              <li>Ürün henüz teslim edilmemişse (kod/pin gönderilmeden önce)</li>
+              <li>Sipariş teknik hata nedeniyle çift işlendiyse</li>
+              <li>Yanlış ürün teslim edildiyse (farklı bölge kodu, yanlış platform vb.)</li>
+              <li>Ürün hiç çalışmıyorsa ve 24 saat içinde bildirilmişse</li>
+            </ul>
           </section>
 
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-l-2 border-l-red-500">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 6 – İPTAL VE İADE HAKKI</h2>
-            <div className="bg-red-950/30 rounded-xl p-4 border border-red-900/50 mb-3">
-              <p className="text-red-300 font-semibold text-xs uppercase tracking-wider mb-2">⚠️ Önemli Uyarı</p>
-              <p className="text-slate-300">
-                Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, elektronik ortamda anında
-                teslim edilen dijital içerikler (oyun kodu, aktivasyon anahtarı, gift card vb.) teslim
-                edildikten sonra{' '}
-                <span className="text-red-400 font-bold">iade ve iptal kapsamı dışındadır.</span>
-              </p>
-            </div>
-            <p className="text-slate-400">
-              Ürün teslim edilmeden önce sipariş iptali talep edilebilir. Teslim edilen ve/veya
-              görüntülenen dijital ürünler için cayma hakkı kullanılamaz.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 7 – SATICI'NIN YÜKÜMLÜLÜKLERİ</h2>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Ürünlerin doğru ve eksiksiz teslim edilmesi</li>
-              <li>Ödeme güvenliğinin sağlanması</li>
-              <li>Müşteri şikayetlerinin makul sürede yanıtlanması</li>
-              <li>Kişisel verilerin KVKK kapsamında korunması</li>
+            <h2 className="text-white font-bold text-base mb-3">❌ İptal / İade Mümkün Olmayan Durumlar</h2>
+            <ul className="list-disc list-inside space-y-2 text-slate-400">
+              <li>Ürün kodu görüntülendi veya kopyalandı</li>
+              <li>Aktivasyon gerçekleştirildi</li>
+              <li>Gift card bakiyesi kullanıldı</li>
+              <li>Oyun içi para birimi hesaba yüklendi</li>
+              <li>"Beğenmedim" veya "başkasına aldım" gibi kişisel nedenler</li>
+              <li>Bölge uyumsuzluğu (ürün açıklamasında belirtilmişse)</li>
             </ul>
           </section>
 
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 8 – ALICI'NIN YÜKÜMLÜLÜKLERİ</h2>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Doğru ve güncel kişisel bilgi sağlamak</li>
-              <li>Ürün açıklamalarını satın almadan önce okumak</li>
-              <li>Ödeme işlemlerini yetkili kartla gerçekleştirmek</li>
-              <li>Dijital ürünleri başkasıyla paylaşmamak (lisans ihlali)</li>
-            </ul>
+            <h2 className="text-white font-bold text-base mb-3">📩 İade / İptal Talebi Nasıl Yapılır?</h2>
+            <p className="text-slate-400 mb-3">İptal veya iade talebiniz için:</p>
+            <ol className="list-decimal list-inside space-y-2 text-slate-400">
+              <li>
+                Sipariş numaranızla{' '}
+                <span className="text-indigo-400">karmo2931@gmail.com</span> adresine e-posta gönderin
+              </li>
+              <li>
+                Veya{' '}
+                <span className="text-indigo-400">+90 536 016 76 64</span> numaralı WhatsApp hattımızdan ulaşın
+              </li>
+              <li>
+                Talebiniz <strong className="text-white">24-48 saat</strong> içinde değerlendirilecektir
+              </li>
+            </ol>
           </section>
 
           <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 9 – UYUŞMAZLIK ÇÖZÜMÜ</h2>
+            <h2 className="text-white font-bold text-base mb-3">💳 Onaylanan İadelerde Geri Ödeme</h2>
             <p className="text-slate-400">
-              Bu sözleşmeden doğan uyuşmazlıklarda Türkiye Cumhuriyeti mahkemeleri ve Tüketici Hakem
-              Heyetleri yetkilidir. Tüketici şikayetleri için{' '}
-              <a
-                href="https://www.tuketicisikayetleri.gov.tr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-400 hover:underline"
-              >
-                tüketici şikayetleri portalı
-              </a>{' '}
-              kullanılabilir.
+              İade talebiniz onaylanması halinde, ödeme iade süreci kullanılan ödeme yöntemine göre{' '}
+              <strong className="text-white">3-10 iş günü</strong> içinde tamamlanır.
+              Banka işlem süreleri Gamestore Pro'nun kontrolü dışındadır.
             </p>
           </section>
 
           <div className="text-center text-slate-600 text-xs pt-4">
-            Bu sözleşme {today} tarihinde yürürlüğe girmiştir. © Gamestore Pro — ABDULKERIM ĞAREZ
+            © {new Date().getFullYear()} Gamestore Pro — ABDULKERIM ĞAREZ — Vergi No: 4541721451
           </div>
 
         </div>
