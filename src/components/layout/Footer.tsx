@@ -15,7 +15,7 @@ import {
   Tag
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion'; // تأكد من استخدام مكتبة الانيميشن المعتمدة بمشروعك (framer-motion أو motion)
 
 export const Footer: React.FC = () => {
   const { language, t } = useLanguage();
@@ -136,8 +136,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-4 text-sm">
               <li><Link to="/distance-sales" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">Mesafeli Satış Sözleşmesi</Link></li>
               <li><Link to="/return-policy" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">İptal ve İade Koşulları</Link></li>
-              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">{language === 'tr' ? 'Gizlilik Politikası' : t('footer.links.privacy')}</Link></li>
-              <li><Link to="/terms" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">{language === 'tr' ? 'Kullanım Koşulları' : t('footer.links.terms')}</Link></li>
+              <li><Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors text-xs">{language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link></li>
             </ul>
           </div>
 
@@ -159,7 +158,7 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-3 text-slate-400 text-sm">
                 <MessageCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
                 <div>
-                   <p className="font-bold text-slate-200">+90 536 016 76 64</p>
+                   <p className="font-bold text-slate-200" dir="ltr">+90 536 016 76 64</p>
                    <p className="text-xs">{language === 'ar' ? 'متجر: Gamestore Pro' : 'Store: Gamestore Pro'}</p>
                 </div>
               </div>
@@ -168,24 +167,37 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 max-w-7xl mx-auto">
           <p className="text-slate-500 text-sm text-center md:text-start px-2">
             © {new Date().getFullYear()} Gamestore Pro. All rights reserved.
           </p>
           
-          <div className="flex items-center gap-6 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 w-auto" referrerPolicy="no-referrer" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 w-auto" referrerPolicy="no-referrer" />
-            <div className="flex items-center gap-1 font-black text-white text-xs italic">
-               <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center not-italic mr-1">
-                 <span className="text-[8px] text-blue-950 font-bold">TROY</span>
-               </span>
-               TROY
+          {/* حزمة شعارات الدفع والأمان البرمجية النظيفة بالـ SVG الأصلي والمضيء 100% */}
+          <div className="flex items-center gap-6 justify-center flex-wrap">
+            {/* 3D Secure */}
+            <div className="border border-slate-700/60 rounded-xl px-3 py-1.5 text-[10px] text-slate-400 font-black flex items-center gap-1.5 bg-slate-950/40 tracking-wider">
+              <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              3D SECURE
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-400 border border-slate-700 px-2 py-1 rounded font-bold">
-               <ShieldCheck className="w-3 h-3 text-indigo-500" />
-               3D SECURE
-            </div>
+
+            {/* TROY */}
+            <svg viewBox="0 0 100 30" className="h-5 w-auto opacity-95" xmlns="http://w3.org">
+              <text x="5" y="24" fill="#FFFFFF" fontFamily="Arial Black, Impact, sans-serif" fontWeight="900" fontSize="25" style={{ transform: 'skewX(-8deg)' }}>TROY</text>
+            </svg>
+
+            {/* MasterCard */}
+            <svg viewBox="0 0 24 18" className="h-6 w-auto" xmlns="http://w3.org">
+              <circle cx="7" cy="9" r="7" fill="#EB001B" />
+              <circle cx="17" cy="9" r="7" fill="#F5A11A" fillOpacity="0.85" />
+            </svg>
+
+            {/* VISA */}
+            <svg viewBox="0 0 24 24" className="h-5 w-auto opacity-95" fill="none" xmlns="http://w3.org">
+              <path d="M22 6.182h-2.181l-3.327 9.873h2.364L22 6.182zM15.455 6.182h-4.364l-3.2 7.745L6.618 7c-.364-1.455-1.636-2.545-3.055-2.618v.073L5.964 16h2.363l3.782-9.818h3.346l.001-.001zm6.545 0h-2.182L16.49 16.055h2.364L22 6.182z" fill="#FFFFFF"/>
+              <path d="M4.618 6.182H.11l-.037.182C3.127 7.127 4.182 8.545 4.727 10l-.836-4.182.727.182z" fill="#FFFFFF"/>
+            </svg>
           </div>
         </div>
       </div>
