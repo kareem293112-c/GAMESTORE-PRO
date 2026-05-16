@@ -79,13 +79,16 @@ async function startServer() {
     }
     const idToken = authHeader.split('Bearer ')[1];
     try {
-      if (!adminApp) throw new Error('Firebase Admin not initialized');
+      if (!adminApp) {
+        console.error('Firebase Admin app is not initialized.');
+        return res.status(500).json({ error: 'خادم قاعدة البيانات غير جاهز' });
+      }
       const decodedToken = await admin.auth(adminApp).verifyIdToken(idToken);
       req.user = decodedToken;
       next();
-    } catch (error) {
-      console.error('Auth error:', error);
-      res.status(401).json({ error: 'Invalid token' });
+    } catch (error: any) {
+      console.error('Auth Verification Error:', error.message);
+      res.status(401).json({ error: 'جلسة العمل غير صالحة، يرجى تسجيل الدخول مرة أخرى' });
     }
   };
 
@@ -100,8 +103,9 @@ async function startServer() {
 
     try {
       // --- PLISIO FLOW (Crypto) ---
-      const PLISIO_API_KEY = process.env.PLISIO_API_KEY;
+      const PLISIO_API_KEY = process.env.PLISIO_API_KEY || process.env.PLISIO_SECRET_KEY;
       if (!PLISIO_API_KEY) {
+        console.error('Plisio Config Error: Neither PLISIO_API_KEY nor PLISIO_SECRET_KEY found in process.env');
         throw new Error('PLISIO_API_KEY not configured');
       }
 
@@ -141,7 +145,7 @@ async function startServer() {
   // Plisio Webhook
   app.post('/api/payment/plisio-webhook', async (req: any, res) => {
     const payload = req.body;
-    const PLISIO_API_KEY = process.env.PLISIO_API_KEY;
+    const PLISIO_API_KEY = process.env.PLISIO_API_KEY || process.env.PLISIO_SECRET_KEY;
 
     if (!PLISIO_API_KEY) {
       return res.status(500).send('Configuration error');

@@ -172,7 +172,7 @@ export const DashboardPage: React.FC = () => {
                       </motion.span>
                     </span>
                     <span className="text-[10px] opacity-80 font-medium">
-                      {selectedMethod === 'whatsapp' ? 'شحن عبر WhatsApp' : 'الدفع عبر Crypto / USDT'}
+                      {selectedMethod === 'whatsapp' ? 'شحن عبر WhatsApp' : 'بيتكوين / إيثيريوم / USDT'}
                     </span>
                   </button>
                   <p className="text-[10px] text-slate-500 text-center font-bold leading-relaxed px-4">

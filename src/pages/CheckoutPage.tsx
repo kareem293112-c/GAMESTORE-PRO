@@ -313,7 +313,7 @@ export const CheckoutPage: React.FC = () => {
                           <ArrowRight className="w-4 h-4 rotate-180" />
                         </span>
                         <span className="text-[10px] opacity-80 font-medium tracking-tight">
-                           {selectedMethod === 'whatsapp' ? 'تواصل عبر WhatsApp' : 'USDT / Bitcoin / Ethereum'}
+                           {selectedMethod === 'whatsapp' ? 'تواصل عبر WhatsApp' : 'بيتكوين / إيثيريوم / USDT'}
                         </span>
                       </button>
                       <p className="text-[9px] text-slate-500 text-center font-bold px-2">
