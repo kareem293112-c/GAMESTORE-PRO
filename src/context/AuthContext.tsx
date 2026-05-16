@@ -32,13 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       // Cleanup previous profile listener
       unsubscribeProfile();
 
       if (firebaseUser) {
         const docRef = doc(db, 'users', firebaseUser.uid);
-        
+
         unsubscribeProfile = onSnapshot(docRef, async (docSnap) => {
           if (docSnap.exists()) {
             setProfile({ uid: firebaseUser.uid, ...docSnap.data() } as UserProfile);
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const newProfile: any = {
               email: firebaseUser.email,
               displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
-              role: firebaseUser.email === 'karmo2931@gmail.com' ? 'admin' : 'customer',
+              role: 'user', // ✅ دائماً user عند الإنشاء
               balance: 0,
               createdAt: serverTimestamp()
             };
@@ -61,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setProfile(null);
       }
+
       setLoading(false);
     });
 
