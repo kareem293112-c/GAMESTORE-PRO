@@ -10,18 +10,19 @@ import fs from 'node:fs';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Handle path resolution for both ESM and CJS
+const isESM = typeof import.meta !== 'undefined' && import.meta.url;
+const _filename = isESM ? fileURLToPath(import.meta.url) : __filename;
+const _dirname = isESM ? path.dirname(_filename) : __dirname;
 
 // Load Firebase Config
 let firebaseConfig: any = {};
 try {
-  const configPath = path.resolve(__dirname, 'firebase-applet-config.json');
+  const configPath = path.resolve(_dirname, 'firebase-applet-config.json');
     
   if (fs.existsSync(configPath)) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   } else {
-    console.warn('Firebase config file not found. Using environment variables if available.');
     firebaseConfig = {
       projectId: process.env.FIREBASE_PROJECT_ID,
       firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
@@ -255,7 +256,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     console.log('Starting in production mode...');
-    const distPath = path.resolve(__dirname, 'dist');
+    const distPath = path.resolve(_dirname, 'dist');
     
     console.log(`Serving static files from: ${distPath}`);
     
