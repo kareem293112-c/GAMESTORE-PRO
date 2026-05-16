@@ -11,16 +11,23 @@ import fs from 'node:fs';
 dotenv.config();
 
 // Handle path resolution for both ESM and CJS
-const isESM = typeof import.meta !== 'undefined' && import.meta.url;
-const _filename = isESM ? fileURLToPath(import.meta.url) : __filename;
-const _dirname = isESM ? path.dirname(_filename) : __dirname;
+const _filename = typeof __filename !== 'undefined' 
+  ? __filename 
+  : fileURLToPath(import.meta.url);
+const _dirname = path.dirname(_filename);
 
 // Load Firebase Config
 let firebaseConfig: any = {};
 try {
-  const configPath = path.resolve(_dirname, 'firebase-applet-config.json');
+  // In production (bundled to dist/server.cjs), the config might be in the parent dir or the same dir
+  const configPaths = [
+    path.resolve(_dirname, 'firebase-applet-config.json'),
+    path.resolve(_dirname, '..', 'firebase-applet-config.json')
+  ];
+  
+  const configPath = configPaths.find(p => fs.existsSync(p));
     
-  if (fs.existsSync(configPath)) {
+  if (configPath) {
     firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   } else {
     firebaseConfig = {
@@ -256,7 +263,12 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     console.log('Starting in production mode...');
-    const distPath = path.resolve(_dirname, 'dist');
+    // If we are running from dist/server.cjs, index.html is likely in the same directory.
+    // If not, we look for a 'dist' subdirectory.
+    let distPath = _dirname;
+    if (!fs.existsSync(path.join(distPath, 'index.html'))) {
+      distPath = path.resolve(_dirname, 'dist');
+    }
     
     console.log(`Serving static files from: ${distPath}`);
     
@@ -273,7 +285,7 @@ async function startServer() {
     } else {
       console.error('Dist folder missing at:', distPath);
       app.get('*', (req, res) => {
-        res.status(500).send('dist folder not found. Please run build first.');
+        res.status(500).send(`dist folder not found at ${distPath}. Please run build first.`);
       });
     }
   }
