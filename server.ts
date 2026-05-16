@@ -100,15 +100,15 @@ async function startServer() {
 
     try {
       // --- PLISIO FLOW (Crypto) ---
-      const PLISIO_SECRET_KEY = process.env.PLISIO_SECRET_KEY;
-      if (!PLISIO_SECRET_KEY) {
-        throw new Error('PLISIO_SECRET_KEY not configured');
+      const PLISIO_API_KEY = process.env.PLISIO_API_KEY;
+      if (!PLISIO_API_KEY) {
+        throw new Error('PLISIO_API_KEY not configured');
       }
 
       const axios = (await import('axios')).default;
       
       const params: any = {
-        api_key: PLISIO_SECRET_KEY,
+        api_key: PLISIO_API_KEY,
         order_number: `T_${userId}_${Date.now()}`, 
         order_name: 'Wallet Top-up (Crypto) - Gamestore Pro',
         source_amount: Number(amount).toFixed(2),
@@ -141,15 +141,15 @@ async function startServer() {
   // Plisio Webhook
   app.post('/api/payment/plisio-webhook', async (req: any, res) => {
     const payload = req.body;
-    const PLISIO_SECRET_KEY = process.env.PLISIO_SECRET_KEY;
+    const PLISIO_API_KEY = process.env.PLISIO_API_KEY;
 
-    if (!PLISIO_SECRET_KEY) {
+    if (!PLISIO_API_KEY) {
       return res.status(500).send('Configuration error');
     }
 
     // 1. Signature Verification
     // Plisio sends verify_hash in the body, which is a SHA1 hash of alphabetized params + api_key
-    // However, the user asked for: "compute the SHA256/MD5 HMAC signature of the raw request body using our PLISIO_SECRET_KEY"
+    // However, the user asked for: "compute the SHA256/MD5 HMAC signature of the raw request body using our PLISIO_API_KEY"
     // I will implement a check using the verify_hash as per Plisio standard if possible, 
     // but I will follow the user's instruction for HMAC SHA256 if they provide a specific header.
     // Plisio doesn't typically send a custom HMAC header unless configured.
@@ -168,7 +168,7 @@ async function startServer() {
     
     // Plisio docs say: HMAC-SHA1 or just SHA1(string+api_key) depending on version.
     // But user wants "SHA256 HMAC of raw request body".
-    const hmac = crypto.createHmac('sha256', PLISIO_SECRET_KEY);
+    const hmac = crypto.createHmac('sha256', PLISIO_API_KEY);
     hmac.update(req.rawBody);
     const calculatedHash = hmac.digest('hex');
 
