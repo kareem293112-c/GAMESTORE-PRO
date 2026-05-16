@@ -1,110 +1,61 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Shield, Lock, Eye, FileText, Globe } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const PrivacyPage: React.FC = () => {
+  const { language } = useLanguage();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 py-16 px-4">
-      <div className="max-w-3xl mx-auto">
-
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6 text-indigo-400" />
+    <div className="min-h-screen bg-[#0f172a] pt-24 pb-20 px-4" dir="rtl">
+      <div className="max-w-4xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 md:p-12 backdrop-blur-xl shadow-2xl"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="bg-indigo-600/20 p-3 rounded-2xl">
+              <Eye className="w-8 h-8 text-indigo-500" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-white">
+              {language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
+            </h1>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Gizlilik Politikası / Privacy Policy</h1>
-            <p className="text-slate-500 text-sm mt-0.5">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>
+
+          <div className="space-y-8 text-slate-300 leading-relaxed">
+            <section>
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-indigo-400" /> مقدمة
+              </h2>
+              <p>نحن في GamersStore نقدر خصوصيتك تماماً. نلتزم بحماية بياناتك الشخصية وضمان سرية المعلومات التي تشاركها معنا عند استخدام منصتنا لشراء أو بيع المنتجات الرقمية.</p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Lock className="w-5 h-5 text-indigo-400" /> البيانات التي نجمعها
+              </h2>
+              <ul className="list-disc list-inside space-y-2 mr-4">
+                <li>المعلومات الشخصية: الاسم، البريد الإلكتروني، ورقم الهاتف.</li>
+                <li>بيانات الدفع: يتم معالجتها عبر بوابات دفع مشفرة ولا نقوم بتخزين بيانات البطاقات لدينا.</li>
+                <li>سجلات الاستخدام: لتحسين تجربة التسوق الخاصة بك.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-indigo-400" /> ملفات تعريف الارتباط (Cookies)
+              </h2>
+              <p>نستخدم ملفات تعريف الارتباط لتذكر تفضيلاتك وتسهيل عملية تسجيل الدخول وضمان استقرار سلة التسوق الخاصة بك أثناء التصفح.</p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" /> حماية البيانات
+              </h2>
+              <p>تخضع جميع البيانات لمعالجة مشفرة (End-to-End Encryption) ولا يتم مشاركتها أبداً مع أطراف ثالثة لأغراض تسويقية دون موافقتك الصريحة.</p>
+            </section>
           </div>
-        </div>
-
-        <div className="space-y-8 text-sm leading-relaxed">
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">1. Veri Sorumlusu / Satıcı Bilgileri</h2>
-            <ul className="space-y-1 text-slate-400">
-              <li><span className="text-slate-300 font-medium">Ad Soyad:</span> ABDULKERIM ĞAREZ</li>
-              <li><span className="text-slate-300 font-medium">Vergi Numarası:</span> 4541721451</li>
-              <li><span className="text-slate-300 font-medium">E-posta:</span> karmo2931@gmail.com</li>
-              <li><span className="text-slate-300 font-medium">Telefon / WhatsApp:</span> +90 536 016 76 64</li>
-              <li><span className="text-slate-300 font-medium">Platform:</span> Gamestore Pro</li>
-              <li><span className="text-slate-300 font-medium">Web Sitesi:</span> gamestore-pro-u1v1.onrender.com</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">2. Toplanan Kişisel Veriler</h2>
-            <p className="text-slate-400 mb-3">Sitemizi kullandığınızda aşağıdaki veriler toplanabilir:</p>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Ad, soyad ve e-posta adresi</li>
-              <li>Telefon numarası (iletişim amacıyla)</li>
-              <li>Ödeme bilgileri (yalnızca ödeme altyapısı tarafından işlenir, bizimle paylaşılmaz)</li>
-              <li>IP adresi ve tarayıcı bilgileri (güvenlik amacıyla)</li>
-              <li>Sipariş geçmişi ve ürün tercihleri</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">3. Verilerin Kullanım Amacı</h2>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Siparişlerin işlenmesi ve dijital ürünlerin teslim edilmesi</li>
-              <li>Müşteri desteği sağlanması</li>
-              <li>Yasal yükümlülüklerin yerine getirilmesi</li>
-              <li>Dolandırıcılığın önlenmesi ve güvenliğin sağlanması</li>
-              <li>Hizmet kalitesinin iyileştirilmesi</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">4. Üçüncü Taraflarla Paylaşım</h2>
-            <p className="text-slate-400">
-              Kişisel verileriniz; ödeme işlemcileri, yasal zorunluluklar veya açık rızanız olmadan
-              üçüncü taraflarla paylaşılmaz. Ödeme altyapısı PCI-DSS uyumlu güvenli sistemler
-              üzerinden çalışmaktadır.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-l-2 border-l-amber-500">
-            <h2 className="text-white font-bold text-base mb-3">5. Dijital Ürünler Hakkında Önemli Bilgi</h2>
-            <p className="text-slate-400">
-              Satılan tüm ürünler dijital niteliktedir (oyun kodu, gift card, dijital pin vb.).
-              Ürün teslimattan sonra iade veya iptal mümkün{' '}
-              <span className="text-amber-400 font-semibold">değildir</span>.
-              Lütfen satın almadan önce ürün detaylarını dikkatlice okuyunuz.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">6. Çerezler (Cookies)</h2>
-            <p className="text-slate-400">
-              Sitemiz oturum yönetimi ve kullanıcı deneyimini iyileştirmek amacıyla çerezler
-              kullanmaktadır. Tarayıcı ayarlarınızdan çerezleri devre dışı bırakabilirsiniz,
-              ancak bu bazı işlevleri etkileyebilir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">7. KVKK Kapsamında Haklarınız</h2>
-            <p className="text-slate-400 mb-3">6698 sayılı KVKK uyarınca aşağıdaki haklara sahipsiniz:</p>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
-              <li>Verilerinizin düzeltilmesini veya silinmesini talep etme</li>
-              <li>Verilerinizin aktarıldığı kişileri öğrenme</li>
-              <li>İşlemeye itiraz etme hakkı</li>
-            </ul>
-            <p className="text-slate-400 mt-3">
-              Talepleriniz için: <span className="text-indigo-400">karmo2931@gmail.com</span>
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">8. İletişim</h2>
-            <p className="text-slate-400">
-              Bu politikayla ilgili sorularınız için bize ulaşın:<br />
-              📧 karmo2931@gmail.com<br />
-              📱 +90 536 016 76 64 (WhatsApp)
-            </p>
-          </section>
-
-        </div>
+        </motion.div>
       </div>
     </div>
   );

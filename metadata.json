@@ -2,5 +2,7 @@
   "name": "Remix: GamersStore Pro",
   "description": "The ultimate professional market for gamer accounts, currencies, and gift cards.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

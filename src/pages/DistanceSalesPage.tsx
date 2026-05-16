@@ -1,141 +1,59 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { motion } from 'motion/react';
+import { FileText, Gavel, Scale, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const DistanceSalesPage: React.FC = () => {
-  const today = new Date().toLocaleDateString('tr-TR');
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 py-16 px-4">
-      <div className="max-w-3xl mx-auto">
-
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-            <FileText className="w-6 h-6 text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Mesafeli Satış Sözleşmesi</h1>
-            <p className="text-slate-500 text-sm mt-0.5">6502 Sayılı Tüketicinin Korunması Hakkında Kanun kapsamında hazırlanmıştır.</p>
-          </div>
-        </div>
-
-        <div className="space-y-6 text-sm leading-relaxed">
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-4">MADDE 1 – TARAFLAR</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-indigo-400 font-semibold mb-1">SATICI:</p>
-                <ul className="space-y-1 text-slate-400">
-                  <li><span className="text-slate-300">Unvan:</span> ABDULKERIM ĞAREZ</li>
-                  <li><span className="text-slate-300">Vergi No:</span> 4541721451</li>
-                  <li><span className="text-slate-300">E-posta:</span> karmo2931@gmail.com</li>
-                  <li><span className="text-slate-300">Telefon:</span> +90 536 016 76 64</li>
-                  <li><span className="text-slate-300">Platform:</span> Gamestore Pro — gamestore-pro-u1v1.onrender.com</li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-emerald-400 font-semibold mb-1">ALICI:</p>
-                <p className="text-slate-400">Siteye üye olan veya sipariş veren gerçek/tüzel kişi (bundan böyle "Alıcı" olarak anılacaktır).</p>
-              </div>
+    <div className="min-h-screen bg-[#0f172a] pt-24 pb-20 px-4">
+      <div className="max-w-4xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 md:p-12 backdrop-blur-xl shadow-2xl"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="bg-indigo-600/20 p-3 rounded-2xl">
+              <Scale className="w-8 h-8 text-indigo-500" />
             </div>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 2 – SÖZLEŞMENİN KONUSU</h2>
-            <p className="text-slate-400">
-              Bu sözleşme, Alıcı'nın Gamestore Pro web sitesi üzerinden elektronik ortamda sipariş verdiği
-              dijital ürünlerin (oyun kodu, gift card, oyun içi para birimi, dijital pin vb.) satışı ve
-              teslimatına ilişkin karşılıklı hak ve yükümlülükleri düzenlemektedir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 3 – ÜRÜN BİLGİLERİ VE FİYATLAR</h2>
-            <p className="text-slate-400">
-              Satışa sunulan ürünlerin özellikleri, fiyatları ve açıklamaları site üzerinde ilgili ürün
-              sayfasında yer almaktadır. Tüm fiyatlara KDV dahildir. Satıcı, fiyatları önceden
-              bildirmeksizin güncelleme hakkını saklı tutar; ancak sipariş anındaki fiyat geçerlidir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 4 – ÖDEME</h2>
-            <p className="text-slate-400">
-              Ödemeler güvenli ödeme altyapısı üzerinden kredi kartı, banka kartı veya diğer desteklenen
-              yöntemlerle gerçekleştirilir. Ödeme bilgileri Satıcı tarafından saklanmaz;
-              PCI-DSS uyumlu ödeme işlemcisi tarafından işlenir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 5 – TESLİMAT</h2>
-            <p className="text-slate-400">
-              Dijital ürünler, ödemenin onaylanmasının ardından{' '}
-              <span className="text-white font-semibold">anında ve otomatik olarak</span> Alıcı'nın
-              kayıtlı e-posta adresine veya hesap paneline iletilir. Teslimat süresi en fazla 24 saattir;
-              teknik aksaklık halinde Alıcı bilgilendirilir.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-l-2 border-l-red-500">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 6 – İPTAL VE İADE HAKKI</h2>
-            <div className="bg-red-950/30 rounded-xl p-4 border border-red-900/50 mb-3">
-              <p className="text-red-300 font-semibold text-xs uppercase tracking-wider mb-2">⚠️ Önemli Uyarı</p>
-              <p className="text-slate-300">
-                Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, elektronik ortamda anında
-                teslim edilen dijital içerikler (oyun kodu, aktivasyon anahtarı, gift card vb.) teslim
-                edildikten sonra{' '}
-                <span className="text-red-400 font-bold">iade ve iptal kapsamı dışındadır.</span>
-              </p>
-            </div>
-            <p className="text-slate-400">
-              Ürün teslim edilmeden önce sipariş iptali talep edilebilir. Teslim edilen ve/veya
-              görüntülenen dijital ürünler için cayma hakkı kullanılamaz.
-            </p>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 7 – SATICI'NIN YÜKÜMLÜLÜKLERİ</h2>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Ürünlerin doğru ve eksiksiz teslim edilmesi</li>
-              <li>Ödeme güvenliğinin sağlanması</li>
-              <li>Müşteri şikayetlerinin makul sürede yanıtlanması</li>
-              <li>Kişisel verilerin KVKK kapsamında korunması</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 8 – ALICI'NIN YÜKÜMLÜLÜKLERİ</h2>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Doğru ve güncel kişisel bilgi sağlamak</li>
-              <li>Ürün açıklamalarını satın almadan önce okumak</li>
-              <li>Ödeme işlemlerini yetkili kartla gerçekleştirmek</li>
-              <li>Dijital ürünleri başkasıyla paylaşmamak (lisans ihlali)</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">MADDE 9 – UYUŞMAZLIK ÇÖZÜMÜ</h2>
-            <p className="text-slate-400">
-              Bu sözleşmeden doğan uyuşmazlıklarda Türkiye Cumhuriyeti mahkemeleri ve Tüketici Hakem
-              Heyetleri yetkilidir. Tüketici şikayetleri için{' '}
-              <a
-                href="https://www.tuketicisikayetleri.gov.tr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-400 hover:underline"
-              >
-                tüketici şikayetleri portalı
-              </a>{' '}
-              kullanılabilir.
-            </p>
-          </section>
-
-          <div className="text-center text-slate-600 text-xs pt-4">
-            Bu sözleşme {today} tarihinde yürürlüğe girmiştir. © Gamestore Pro — ABDULKERIM ĞAREZ
+            <h1 className="text-2xl md:text-3xl font-black text-white">
+              MESAFELİ SATIŞ SÖZLEŞMESİ
+            </h1>
           </div>
 
-        </div>
+          <div className="space-y-8 text-slate-300 leading-relaxed text-sm">
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                 1. TARAFLAR
+              </h2>
+              <p>Bu Sözleşme, Gamestore Pro (Bu sözleşmede "SATICI" olarak anılacaktır) ile Gamestore Pro web sitesi üzerinden sipariş veren ve ürün/hizmet satın alan kullanıcı (Bu sözleşmede "ALICI" olarak anılacaktır) arasında elektronik ortamda akdedilmiştir.</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                 2. SÖZLEŞMENİN KONUSU
+              </h2>
+              <p>İşbu Sözleşme'nin konusu, ALICI'nın SATICI'ya ait Gamestore Pro web sitesinden elektronik ortamda siparişini yaptığı, sitede nitelikleri ve satış ücreti belirtilen dijital ürün/hizmetin (Oyun içi para, dijital kartlar, epin, oyun kodları vb.) satışı ve teslimi ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin saptanmasıdır.</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                 3. ÜRÜN TESLİMATI VE KULLANIMI
+              </h2>
+              <p>Sözleşme konusu ürünler, dijital içerik ve anlık ifa edilen hizmet niteliğinde olduğundan, fiziki kargo gönderimi yapılmaz. Ürünler, ALICI'nın ödemeyi başarıyla tamamlamasının ardından web sitesi üzerindeki "Siparişlerim" sayfasında veya ALICI tarafından belirtilen iletişim kanalları üzerinden dijital ortamda anlık veya kontrol sonrası teslim edilir.</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                 4. GENEL HÜKÜMLER
+              </h2>
+              <div className="space-y-4">
+                <p>4.1. ALICI, web sitesinde sözleşme konusu ürünün temel nitelikleri, satış fiyatı ve ödeme şekli ile teslimata ilişkin ön bilgileri okuyup bilgi sahibi olduğunu ve elektronik ortamda gerekli teyidi verdiğini beyan eder.</p>
+                <p>4.2. Dijital ürünlerin kullanımı için gerekli olan internet bağlantısı, oyun hesapları ve cihaz gereksinimleri tamamen ALICI'nın sorumluluğundadır.</p>
+              </div>
+            </section>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

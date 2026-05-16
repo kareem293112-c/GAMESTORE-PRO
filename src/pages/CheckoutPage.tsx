@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, doc, serverTimestamp, runTransaction, addDoc } from 'firebase/firestore';
 import { formatPrice } from '../lib/utils';
-import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock, MessageSquare } from 'lucide-react';
+import { CreditCard, ShoppingBag, ShieldCheck, Truck, ArrowRight, CheckCircle2, Loader2, Lock, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,6 +16,7 @@ export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<'whatsapp' | 'crypto'>('whatsapp');
 
   const cartTotal = items.reduce(
     (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
@@ -28,19 +29,6 @@ export const CheckoutPage: React.FC = () => {
     name: profile?.displayName || '',
     email: user?.email || '',
   });
-
-  const sendToWhatsApp = () => {
-    const message = `طلب جديد من ${formData.name}
-البريد: ${formData.email}
---------------------------
-المنتجات:
-${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${formatPrice(item.price * item.quantity)}`).join('\n')}
---------------------------
-الإجمالي: ${formatPrice(cartTotal)}
-    `;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/905360167664?text=${encodedMessage}`, '_blank');
-  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,18 +223,105 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                   </div>
                 </div>
                 {!canUseWallet && (
-                  <div className="mt-3 pt-3 border-t border-red-500/20">
-                    <p className="text-red-400 text-xs font-bold flex items-center justify-end gap-1">
-                      رصيدك الحالي غير كافٍ، يرجى التواصل مع الإدارة لشحن محفظتك
-                      <MessageSquare className="w-3 h-3" />
+                  <div className="mt-4 pt-4 border-t border-red-500/20 space-y-4">
+                    <p className="text-red-400 text-xs font-bold flex items-center justify-center gap-1 bg-red-500/5 py-2 rounded-lg">
+                      رصيدك الحالي غير كافٍ لإتمام هذا الطلب
                     </p>
-                    <button 
-                      type="button"
-                      onClick={() => window.open('https://wa.me/905360167664', '_blank')}
-                      className="mt-2 w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black py-1.5 rounded-lg border border-emerald-600/30 transition-all uppercase"
-                    >
-                      شحن المحفظة عبر واتساب
-                    </button>
+                    
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedMethod('whatsapp')}
+                          className={`p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 ${selectedMethod === 'whatsapp' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-slate-800/30 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 opacity-80" />
+                          <span className="text-[9px] font-black leading-none">واتساب مباشر</span>
+                        </button>
+
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedMethod('crypto')}
+                          className={`p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 ${selectedMethod === 'crypto' ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400' : 'bg-slate-800/30 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                        >
+                          <CreditCard className="w-3 h-3 opacity-80" />
+                          <span className="text-[9px] font-black leading-none">عملات رقمية</span>
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          min={Math.max(1, cartTotal - (profile?.balance || 0))}
+                          step="1"
+                          placeholder="مبلغ الشحن المطلوب (USD)"
+                          className="w-full bg-slate-800/50 border border-slate-700 p-3 rounded-xl text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pr-12 text-sm"
+                          id="checkout-topup-amount"
+                        />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                      </div>
+
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          const amountInput = document.getElementById('checkout-topup-amount') as HTMLInputElement;
+                          const amount = parseFloat(amountInput.value);
+                          
+                          if (!amount || amount < 1) {
+                            toast.error('يرجى إدخال مبلغ صالح (حد أدنى $1)');
+                            return;
+                          }
+
+                          if (selectedMethod === 'whatsapp') {
+                            const message = `مرحباً، أرغب في شحن رصيد محفظتي بمبلغ $${amount} لإتمام عملية شراء. بريدي الإلكتروني: ${user?.email}`;
+                            window.open(`https://wa.me/905360167664?text=${encodeURIComponent(message)}`, '_blank');
+                            return;
+                          }
+
+                          const loadingToast = toast.loading('جاري إنشاء فاتورة الدفع...');
+                          
+                          try {
+                            const token = await user?.getIdToken();
+                            const response = await fetch('/api/wallet/topup', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ amount, method: 'crypto' })
+                            });
+
+                            const data = await response.json();
+                            
+                            if (data.invoice_url) {
+                              toast.success('تم إنشاء الفاتورة بنجاح. سيتم توجيهك للدفع.', { id: loadingToast });
+                              setTimeout(() => {
+                                window.location.href = data.invoice_url;
+                              }, 1500);
+                            } else {
+                              const errorMsg = data.details || data.error || 'فشل إنشاء الفاتورة';
+                              throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
+                            }
+                          } catch (error: any) {
+                            toast.error(error.message, { id: loadingToast });
+                          }
+                        }}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-xl shadow-emerald-600/20 transition-all flex flex-col items-center justify-center gap-0.5 group/btn active:scale-95 text-sm"
+                      >
+                        <span className="flex items-center gap-2 text-base">
+                           {selectedMethod === 'whatsapp' ? 'تواصل للشحن والدفع' : 'شحن رقمي والدفع'}
+                          <ArrowRight className="w-4 h-4 rotate-180" />
+                        </span>
+                        <span className="text-[10px] opacity-80 font-medium tracking-tight">
+                           {selectedMethod === 'whatsapp' ? 'تواصل عبر WhatsApp' : 'USDT / Bitcoin / Ethereum'}
+                        </span>
+                      </button>
+                      <p className="text-[9px] text-slate-500 text-center font-bold px-2">
+                        {selectedMethod === 'whatsapp' 
+                          ? '* سيتم تحويلك للدردشة مع الدعم الفني لإتمام عملية الشحن يدوياً.' 
+                          : '* سيتم تحويلك لصفحة الدفع المشفرة المباشرة عبر Plisio.'}
+                      </p>
+                    </div>
                   </div>
                 )}
                 <div className="absolute top-0 right-0 w-8 h-8 bg-emerald-600 flex items-center justify-center rounded-bl-xl">
@@ -289,12 +364,6 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
                   يتم الدفع بشكل آمن وسريع عبر محفظتك الإلكترونية الخاصة بالمنصة.
                 </p>
               </div>
-              <img 
-                src="https://raw.githubusercontent.com/kareem293112-c/GAMESTORE-PRO/main/logo_band_colored@1X.png" 
-                alt="Payment Methods" 
-                className="h-6 w-auto opacity-80" 
-                referrerPolicy="no-referrer"
-              />
             </div>
 
             <button
@@ -320,7 +389,7 @@ ${items.map(item => `- ${item.name} (الكمية: ${item.quantity}) - السع�
 
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {items.map((item) => (
-                <div key={item.productId} className="flex gap-4">
+                <div key={item.id} className="flex gap-4">
                   <img src={item.imageUrl} className="w-16 h-16 rounded-xl object-cover" alt="" />
                   <div className="flex-1 space-y-1">
                     <h4 className="text-sm font-bold text-slate-200 line-clamp-1">{item.name}</h4>

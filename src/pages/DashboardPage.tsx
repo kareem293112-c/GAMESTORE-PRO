@@ -3,7 +3,8 @@ import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestor
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Order } from '../types';
-import { User, Package, Calendar, Clock, CreditCard, Loader2 } from 'lucide-react';
+import { User, Package, Calendar, Clock, CreditCard, Loader2, MessageCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
@@ -12,6 +13,16 @@ export const DashboardPage: React.FC = () => {
   const { profile, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMethod, setSelectedMethod] = useState<'whatsapp' | 'crypto'>('whatsapp');
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('topup') === 'success') {
+      toast.success('تم استلام طلب الشحن بنجاح! سيظهر الرصيد في حسابك قريباً بمجرد تأكيد الشبكة.');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -72,25 +83,105 @@ export const DashboardPage: React.FC = () => {
                 <h3 className="text-slate-100 font-black text-lg">محفظتي</h3>
                 <CreditCard className="w-6 h-6 text-emerald-400" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-4">
                 <p className="text-slate-400 text-xs font-bold">الرصيد المتاح:</p>
                 <p className="text-4xl font-black text-emerald-400">{formatPrice(profile?.balance || 0)}</p>
+                
+                <div className="pt-4 space-y-4">
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        min="1"
+                        step="1"
+                        placeholder="المبلغ بالدولار (USD)"
+                        className="w-full bg-slate-800/50 border border-slate-700 p-4 rounded-2xl text-white font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pr-12"
+                        id="topup-amount"
+                      />
+                    </div>
+                  
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={() => setSelectedMethod('whatsapp')}
+                        className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-1.5 ${selectedMethod === 'whatsapp' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-slate-800/30 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                      >
+                        <MessageCircle className="w-4 h-4 opacity-80" />
+                        <span className="text-[10px] font-black leading-none">واتساب مباشر</span>
+                      </button>
+
+                      <button 
+                        onClick={() => setSelectedMethod('crypto')}
+                        className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-1.5 ${selectedMethod === 'crypto' ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400' : 'bg-slate-800/30 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                      >
+                        <CreditCard className="w-4 h-4 opacity-80" />
+                        <span className="text-[10px] font-black leading-none">عملات رقمية</span>
+                      </button>
+                    </div>
+
+                    <button 
+                    onClick={async () => {
+                      const amountInput = document.getElementById('topup-amount') as HTMLInputElement;
+                      const amount = parseFloat(amountInput.value);
+                      
+                      if (!amount || amount < 1) {
+                        toast.error('يرجى إدخال مبلغ صالح (حد أدنى $1)');
+                        return;
+                      }
+
+                      if (selectedMethod === 'whatsapp') {
+                        const message = `مرحباً، أرغب في شحن رصيد محفظتي بمبلغ $${amount}. بريدي الإلكتروني: ${user?.email}`;
+                        window.open(`https://wa.me/905360167664?text=${encodeURIComponent(message)}`, '_blank');
+                        return;
+                      }
+
+                      const loadingToast = toast.loading('جاري إنشاء فاتورة الدفع...');
+                      
+                      try {
+                        const token = await user?.getIdToken();
+                        const response = await fetch('/api/wallet/topup', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify({ amount, method: 'crypto' })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.invoice_url) {
+                          toast.success('تم إنشاء الفاتورة بنجاح. سيتم توجيهك للدفع.', { id: loadingToast });
+                          setTimeout(() => {
+                            window.location.href = data.invoice_url;
+                          }, 1500);
+                        } else {
+                          throw new Error(data.error || 'فشل إنشاء الفاتورة');
+                        }
+                      } catch (error: any) {
+                        toast.error(error.message, { id: loadingToast });
+                      }
+                    }}
+                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all flex flex-col items-center justify-center gap-0.5 group/btn active:scale-95"
+                  >
+                    <span className="flex items-center gap-2">
+                       {selectedMethod === 'whatsapp' ? 'تواصل للشحن' : 'شحن المحفظة'}
+                      <motion.span
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                      >
+                        ←
+                      </motion.span>
+                    </span>
+                    <span className="text-[10px] opacity-80 font-medium">
+                      {selectedMethod === 'whatsapp' ? 'شحن عبر WhatsApp' : 'الدفع عبر Crypto / USDT'}
+                    </span>
+                  </button>
+                  <p className="text-[10px] text-slate-500 text-center font-bold leading-relaxed px-4">
+                    {selectedMethod === 'whatsapp' 
+                      ? '* سيتم تحويلك للدردشة مع الدعم الفني لإتمام عملية الشحن يدوياً.' 
+                      : '* سيتم تحويلك إلى Plisio لإتمام الدفع بأي عملة رقمية تفضلها.'}
+                  </p>
+                </div>
               </div>
-              <button 
-                onClick={() => {
-                  const message = encodeURIComponent(`مرحباً، أريد شحن محفظتي في المنصة.\nالإيميل: ${user?.email}\nالمبلغ المطلوب: `);
-                  window.open(`https://wa.me/905360167664?text=${message}`, '_blank');
-                }}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 group/btn active:scale-95"
-              >
-                شحن الرصيد
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  ←
-                </motion.span>
-              </button>
             </div>
           </div>
         </div>

@@ -84,7 +84,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
               ) : (
                 items.map((item) => (
                   <div
-                    key={item.productId}
+                    key={item.id}
                     className="flex gap-4 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50 group"
                   >
                     <img
@@ -98,7 +98,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                           {item.name}
                         </h4>
                         <button
-                          onClick={() => removeFromCart(item.productId)}
+                          onClick={() => removeFromCart(item.id)}
                           className="text-slate-500 hover:text-red-400"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -108,14 +108,14 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                         <p className="text-indigo-400 font-bold">{formatPrice(item.price)}</p>
                         <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700">
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="p-1 hover:text-indigo-400"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="w-4 text-center text-xs font-bold">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="p-1 hover:text-indigo-400"
                           >
                             <Plus className="w-3 h-3" />

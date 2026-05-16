@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Language = 'ar' | 'en';
+type Language = 'ar' | 'en' | 'tr';
 type Direction = 'rtl' | 'ltr';
 
 interface LanguageContextType {
@@ -118,6 +118,22 @@ const translations = {
     'footer.links.delivery': 'Delivery & Returns',
     'footer.links.privacy': 'Privacy Policy',
     'footer.links.distance': 'Distance Sales Agreement',
+  },
+  tr: {
+    'nav.home': 'Anasayfa',
+    'nav.games': 'Oyunlar',
+    'nav.login': 'Giriş',
+    'nav.register': 'Kayıt Ol',
+    'nav.dashboard': 'Panel',
+    'nav.search': 'Ara...',
+    'footer.about': 'Oyun hesapları, para birimleri ve öğeler için güvenli bir pazar. E-pin ve oyunları indirimli fiyatlarla ve hızlı teslimatla satın almak için mükemmel bir yer.',
+    'footer.categories': 'Popüler Kategoriler',
+    'footer.quickAccess': 'Hızlı Erişim',
+    'footer.information': 'Bilgi',
+    'footer.follow': 'Bizi Takip Edin',
+    'footer.rights': '© 2026 ITACC ECOM AND WEBSOL LTD. Tüm hakları saklıdır.',
+    'footer.links.privacy': 'Gizlilik Politikası',
+    'footer.links.terms': 'Kullanım Koşulları',
   }
 };
 

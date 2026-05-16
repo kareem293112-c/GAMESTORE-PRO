@@ -1,89 +1,57 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { motion } from 'motion/react';
+import { RefreshCcw } from 'lucide-react';
 
 export const ReturnPolicyPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 py-16 px-4">
-      <div className="max-w-3xl mx-auto">
-
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-            <RefreshCw className="w-6 h-6 text-indigo-400" />
+    <div className="min-h-screen bg-[#0f172a] pt-24 pb-20 px-4">
+      <div className="max-w-4xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 md:p-12 backdrop-blur-xl shadow-2xl"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="bg-rose-600/20 p-3 rounded-2xl">
+              <RefreshCcw className="w-8 h-8 text-rose-500" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white uppercase">
+              İptal ve İade Koşulları
+            </h1>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">İptal ve İade Koşulları</h1>
-            <p className="text-slate-500 text-sm mt-0.5">Cancellation &amp; Return Policy</p>
-          </div>
-        </div>
 
-        <div className="space-y-6 text-sm leading-relaxed">
-
-          <section className="bg-amber-950/30 rounded-2xl p-6 border border-amber-800/50">
-            <h2 className="text-amber-300 font-bold text-base mb-3">⚠️ Dijital Ürünler Hakkında</h2>
-            <p className="text-slate-300">
-              Gamestore Pro'da satılan tüm ürünler{' '}
-              <strong className="text-white">dijital niteliktedir</strong>{' '}
-              (oyun kodu, gift card, aktivasyon anahtarı, oyun içi para birimi vb.).
-              Mesafeli Sözleşmeler Yönetmeliği Madde 15/ğ uyarınca, elektronik ortamda anında teslim
-              edilen dijital içerikler tüketicinin onayıyla teslim edildiğinden{' '}
-              <strong className="text-amber-400">cayma hakkı kapsamı dışındadır.</strong>
+          <div className="space-y-8 text-slate-300 leading-relaxed text-sm">
+            <p>
+              Gamestore Pro web sitesi üzerinden satışı yapılan tüm ürün ve hizmetler (Oyun içi para, E-pin, Dijital Hediye Kartları, Oyun Kodları, Hesaplar vb.) "Dijital İçerik ve Anında İfa Edilen Hizmetler" kapsamında yer almaktadır.
             </p>
-          </section>
 
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">✅ İptal Mümkün Olan Durumlar</h2>
-            <ul className="list-disc list-inside space-y-2 text-slate-400">
-              <li>Ürün henüz teslim edilmemişse (kod/pin gönderilmeden önce)</li>
-              <li>Sipariş teknik hata nedeniyle çift işlendiyse</li>
-              <li>Yanlış ürün teslim edildiyse (farklı bölge kodu, yanlış platform vb.)</li>
-              <li>Ürün hiç çalışmıyorsa ve 24 saat içinde bildirilmişse</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                1. CAYMA HAKKI İSTİSNASI
+              </h2>
+              <p>
+                6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği'nin "Cayma Hakkının İstisnaları" başlıklı 15. Maddesi (ğ) bendi uyarınca; "Elektronik ortamda anında ifa edilen hizmetler veya tüketiciye anında teslim edilen gayrimaddi mallara ilişkin sözleşmelerde" tüketicinin cayma hakkı bulunmamaktadır. Dolayısıyla, sipariş onaylanıp ödeme yapıldıktan sonra işlemin iptal edilmesi mümkün değildir.
+              </p>
+            </section>
 
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800 border-l-2 border-l-red-500">
-            <h2 className="text-white font-bold text-base mb-3">❌ İptal / İade Mümkün Olmayan Durumlar</h2>
-            <ul className="list-disc list-inside space-y-2 text-slate-400">
-              <li>Ürün kodu görüntülendi veya kopyalandı</li>
-              <li>Aktivasyon gerçekleştirildi</li>
-              <li>Gift card bakiyesi kullanıldı</li>
-              <li>Oyun içi para birimi hesaba yüklendi</li>
-              <li>"Beğenmedim" veya "başkasına aldım" gibi kişisel nedenler</li>
-              <li>Bölge uyumsuzluğu (ürün açıklamasında belirtilmişse)</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">📩 İade / İptal Talebi Nasıl Yapılır?</h2>
-            <p className="text-slate-400 mb-3">İptal veya iade talebiniz için:</p>
-            <ol className="list-decimal list-inside space-y-2 text-slate-400">
-              <li>
-                Sipariş numaranızla{' '}
-                <span className="text-indigo-400">karmo2931@gmail.com</span> adresine e-posta gönderin
-              </li>
-              <li>
-                Veya{' '}
-                <span className="text-indigo-400">+90 536 016 76 64</span> numaralı WhatsApp hattımızdan ulaşın
-              </li>
-              <li>
-                Talebiniz <strong className="text-white">24-48 saat</strong> içinde değerlendirilecektir
-              </li>
-            </ol>
-          </section>
-
-          <section className="bg-slate-900/60 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-white font-bold text-base mb-3">💳 Onaylanan İadelerde Geri Ödeme</h2>
-            <p className="text-slate-400">
-              İade talebiniz onaylanması halinde, ödeme iade süreci kullanılan ödeme yöntemine göre{' '}
-              <strong className="text-white">3-10 iş günü</strong> içinde tamamlanır.
-              Banka işlem süreleri Gamestore Pro'nun kontrolü dışındadır.
-            </p>
-          </section>
-
-          <div className="text-center text-slate-600 text-xs pt-4">
-            © {new Date().getFullYear()} Gamestore Pro — ABDULKERIM ĞAREZ — Vergi No: 4541721451
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                2. İADE VE DEĞİŞİM ŞARTLARI
+              </h2>
+              <ul className="list-disc list-inside space-y-4">
+                <li>
+                  Satın alınan dijital kodlar/ürünler, doğası gereği tek kullanımlık, kopyalanabilir ve anında tüketilebilir nitelikte olduğundan, ALICI'ya teslim edildikten sonra <strong>kesinlikle iptal edilemez, iade alınamaz ve ücret iadesi yapılamaz</strong>.
+                </li>
+                <li>
+                  Yalnızca sistemden veya tedarikçiden kaynaklı hatalı, eksik veya çalışmayan bir kod teslim edilmesi durumunda; teknik ekibimizin yapacağı inceleme ve doğrulama sonucunda ürün yenisi ile değiştirilir veya bakiye/ücret iadesi sağlanır.
+                </li>
+                <li>
+                  Kullanıcı hatasından (yanlış ID girilmesi, yanlış bölge/bölgesel kilit uyumsuzluğu vb.) kaynaklı sorunlarda iade yapılmaz.
+                </li>
+              </ul>
+            </section>
           </div>
-
-        </div>
+        </motion.div>
       </div>
     </div>
   );
