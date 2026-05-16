@@ -18,25 +18,29 @@ const _dirname = path.dirname(_filename);
 
 // Load Firebase Config
 let firebaseConfig: any = {};
-try {
-  // In production (bundled to dist/server.cjs), the config might be in the parent dir or the same dir
-  const configPaths = [
-    path.resolve(_dirname, 'firebase-applet-config.json'),
-    path.resolve(_dirname, '..', 'firebase-applet-config.json')
-  ];
-  
-  const configPath = configPaths.find(p => fs.existsSync(p));
+
+// Prioritize environment variables if available
+if (process.env.FIREBASE_PROJECT_ID) {
+  firebaseConfig = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
+  };
+} else {
+  try {
+    // In production (bundled to dist/server.cjs), the config might be in the parent dir or the same dir
+    const configPaths = [
+      path.resolve(_dirname, 'firebase-applet-config.json'),
+      path.resolve(_dirname, '..', 'firebase-applet-config.json')
+    ];
     
-  if (configPath) {
-    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } else {
-    firebaseConfig = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
-    };
+    const configPath = configPaths.find(p => fs.existsSync(p));
+      
+    if (configPath) {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch (error) {
+    console.error('Error loading firebase config from file:', error);
   }
-} catch (error) {
-  console.error('Error loading firebase config:', error);
 }
 
 // Initialize Firebase Admin
@@ -242,7 +246,7 @@ async function startServer() {
       });
 
       console.log(`Successfully topped up $${amount} for user ${userId}`);
-      res.status(200).send('OK');
+      res.status(200).send('تم شحن الرصيد بنجاح');
     } catch (error: any) {
       console.error('Webhook processing error:', error.message);
       if (error.message === 'Transaction already processed') {
