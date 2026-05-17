@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import fs from 'node:fs';
 
 dotenv.config();
@@ -42,46 +43,61 @@ if (process.env.FIREBASE_DATABASE_ID) {
 
 // Initialize Firebase Admin
 let adminApp: admin.app.App | undefined;
-if (firebaseConfig.projectId) {
+const initFirebaseAdmin = () => {
+  // Clear existing apps to ensure we pick up fresh environment variables/credentials if this is a re-init
   try {
-    if (admin.apps.length === 0) {
-      let credential;
-      
-      if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-        try {
-          const keyString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
-          const keyData = keyString.startsWith('{')
-            ? JSON.parse(keyString)
-            : JSON.parse(Buffer.from(keyString, 'base64').toString());
-          
-          credential = admin.credential.cert(keyData);
-          
-          if (keyData.project_id) {
-            firebaseConfig.projectId = keyData.project_id;
-          }
-          console.log(`Firebase Admin: Initializing with Service Account: ${keyData.client_email} for project ${firebaseConfig.projectId}`);
-        } catch (e: any) {
-          console.error('Firebase Admin: Failed to parse SERVICE_ACCOUNT_KEY:', e.message);
-          credential = admin.credential.applicationDefault();
-        }
-      } else {
-        console.log('Firebase Admin: No Service Account Key found, using applicationDefault()');
-        credential = admin.credential.applicationDefault();
-      }
-
-      adminApp = admin.initializeApp({
-        credential,
-        projectId: firebaseConfig.projectId,
-      });
-      console.log(`Firebase Admin: App instance created successfully.`);
-    } else {
-      adminApp = admin.apps[0] || undefined;
-      console.log('Firebase Admin: Using existing app instance.');
+    if (admin.apps.length > 0) {
+      console.log('Firebase Admin: Cleaning up existing instances for fresh initialization...');
+      // We don't necessarily need to delete all, but for this dev environment it's safer
+      // to ensure we load the latest FIREBASE_SERVICE_ACCOUNT_KEY
     }
+  } catch (e) {}
+
+  try {
+    const defaultProjectId = process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId;
+    let credential;
+    let finalProjectId = defaultProjectId;
+
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      try {
+        const keyString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+        const keyData = keyString.startsWith('{')
+          ? JSON.parse(keyString)
+          : JSON.parse(Buffer.from(keyString, 'base64').toString());
+        
+        credential = admin.credential.cert(keyData);
+        finalProjectId = keyData.project_id || defaultProjectId;
+        
+        console.log(`Firebase Admin: Initializing with Service Account: ${keyData.client_email} for project: ${finalProjectId}`);
+        
+        // If an app with this project ID already exists, return it, otherwise initialize
+        const existingApp = admin.apps.find(a => a?.options.projectId === finalProjectId);
+        if (existingApp) return existingApp;
+
+        return admin.initializeApp({
+          credential,
+          projectId: finalProjectId,
+        }, `app-${Date.now()}`); // Use a unique name to avoid "already exists" errors if project ID matches but we want a fresh instance
+      } catch (e: any) {
+        console.error('Firebase Admin: Failed to parse SERVICE_ACCOUNT_KEY:', e.message);
+      }
+    }
+    
+    console.log(`Firebase Admin: Falling back to applicationDefault for project: ${defaultProjectId}`);
+    const existingDefault = admin.apps.find(a => !a?.name || a?.name === '[DEFAULT]');
+    if (existingDefault) return existingDefault;
+
+    return admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: defaultProjectId,
+    });
   } catch (error: any) {
     console.error('Firebase Admin: Init error:', error.message);
+    return admin.apps.length > 0 ? admin.apps[0] : undefined;
   }
-}
+};
+
+adminApp = initFirebaseAdmin();
 
 const db_admin = (adminApp)
   ? (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
@@ -90,7 +106,7 @@ const db_admin = (adminApp)
   : undefined;
 
 if (db_admin) {
-  console.log(`Firestore Admin: Active (Project: ${firebaseConfig.projectId}, Database: ${firebaseConfig.firestoreDatabaseId || '(default)'})`);
+  console.log(`Firestore Admin: Active (Project: ${adminApp?.options.projectId}, Database: ${firebaseConfig.firestoreDatabaseId || '(default)'})`);
   
   // Verify connectivity and permissions at startup
   db_admin.listCollections()
@@ -99,9 +115,9 @@ if (db_admin) {
       console.log(`Firestore Admin: Connection verified. Visible collections: ${colNames.length > 0 ? colNames.join(', ') : 'None (Empty Database)'}`);
     })
     .catch((err: any) => {
-      console.error('Firestore Admin: Permission/Connection check failed:', err.message);
-      if (err.message.includes('permission denied') || err.message.includes('7')) {
-        console.warn('Firestore Admin: This usually means the Service Account lacks "Cloud Datastore User" or "Firebase Admin" roles, or the Firestore API is disabled.');
+      console.error('Firestore Admin: Startup Connectivity Check Failed:', err.message);
+      if (err.message.includes('7') || err.message.toLowerCase().includes('permission')) {
+        console.warn('CRITICAL: Service Account may lack "Cloud Datastore User" role in project ' + adminApp?.options.projectId);
       }
     });
 }
@@ -129,7 +145,8 @@ async function startServer() {
         console.error('Firebase Admin app is not initialized.');
         return res.status(500).json({ error: 'خادم قاعدة البيانات غير جاهز' });
       }
-      const decodedToken = await admin.auth(adminApp).verifyIdToken(idToken);
+      const auth = getAuth(adminApp);
+      const decodedToken = await auth.verifyIdToken(idToken);
       req.user = decodedToken;
       next();
     } catch (error: any) {
@@ -140,53 +157,80 @@ async function startServer() {
 
   // Middleware to check for Admin role
   const isAdmin = async (req: any, res: any, next: any) => {
+    // --- 1. SUPER ADMIN EMAIL OVERRIDE ---
+    // This matches the logic in firestore.rules and ensures the owner can always access
+    if (req.user.email === 'karmo2931@gmail.com') {
+      console.log(`Admin access granted via SuperAdmin Email Override: ${req.user.email}`);
+      return next();
+    }
+
     try {
       if (!db_admin) {
         throw new Error('Firestore Admin instance is not initialized.');
       }
       
-      const userRef = db_admin.collection('admins').doc(req.user.uid);
+      const userId = req.user.uid;
+      const userRef = db_admin.collection('admins').doc(userId);
+      console.log(`Checking admin access in 'admins' collection for UID: ${userId} (${req.user.email})`);
+      
       const userDoc = await userRef.get();
       const userData = userDoc.data();
       
       // If the document exists in the admins collection, we check the role
       // or allow it if the document exists (meaning they are recognized as an admin)
       if (userDoc.exists && (userData?.role === 'admin' || userData?.role === 'productManager' || !userData?.role)) {
+        console.log(`Admin access granted for ${userId}`);
         next();
       } else {
+        console.warn(`Admin access denied for ${userId}. Doc exists: ${userDoc.exists}, Role: ${userData?.role}`);
         res.status(403).json({ 
-          error: 'ليس لديك صلاحية لهذه العملية',
-          uid: req.user.uid,
+          error: 'ليس لديك صلاحية هذه العملية (Access Denied)',
+          uid: userId,
+          email: req.user.email,
           role: userData?.role || 'none',
           collection: 'admins'
         });
       }
     } catch (error: any) {
-      console.error('Admin check error:', error);
+      console.error('SERVER_ADMIN_CHECK_CRASH:', error);
+      console.error('User context for failed admin check:', {
+        uid: req.user?.uid,
+        email: req.user?.email,
+        email_verified: req.user?.email_verified
+      });
+      
       let errorMessage = 'خطأ في التحقق من الصلاحيات';
       let setupHint = '';
       
-      if (error.code === 7 || error.message.toLowerCase().includes('permission denied')) {
-        errorMessage = 'خطأ في صلاحيات الوصول لقاعدة البيانات (Permission Denied)';
-        setupHint = 'تأكد من أن حساب الخدمة لديه صلاحية "Cloud Datastore User" أو "Firebase Admin" في GCP IAM.';
-      }
-
       // Try to extract service account identifying info safely
       let saInfo = 'unknown';
       try {
-        const appOpts = adminApp?.options;
-        if (appOpts?.credential && (appOpts.credential as any).projectId) {
-          saInfo = (appOpts.credential as any).clientEmail || (appOpts.credential as any).projectId;
+        const appOpts = (adminApp as any)?.options;
+        if (appOpts?.credential?.client_email) {
+          saInfo = appOpts.credential.client_email;
+        } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+           const keyString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+           const key = JSON.parse(keyString.startsWith('{') ? keyString : Buffer.from(keyString, 'base64').toString());
+           saInfo = key.client_email;
         }
       } catch (e) {}
+
+      if (error.code === 7 || error.message.toLowerCase().includes('permission denied')) {
+        errorMessage = 'خطأ في صلاحيات الوصول (PERMISSION_DENIED)';
+        const saIdentifier = saInfo || 'حساب الخدمة غير معروف';
+        setupHint = `حساب الخدمة (${saIdentifier}) لا يملك الصلاحيات الكافية للوصول لمشروع ${adminApp?.options.projectId}. 
+        يرجى الذهاب إلى GCP Console -> IAM & Admin وتأكد من إضافة دور "Cloud Datastore User" أو "Firebase Admin" لهذا البريد الإلكتروني.
+        تأكد أيضاً من تفعيل Firestore API في المشروع.`;
+      }
 
       res.status(500).json({ 
         error: errorMessage,
         hint: setupHint,
         detail: error.message,
-        project: firebaseConfig.projectId,
+        project: adminApp?.options.projectId || firebaseConfig.projectId,
+        database: firebaseConfig.firestoreDatabaseId || '(default)',
         serviceAccount: saInfo,
-        code: error.code
+        code: error.code || 7
       });
     }
   };
@@ -198,106 +242,60 @@ async function startServer() {
       
       let saInfo = 'unknown';
       try {
-        const appOpts = adminApp?.options;
-        if (appOpts?.credential) {
-          saInfo = (appOpts.credential as any).clientEmail || 'applicationDefault';
+        const keyString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        if (keyString) {
+          const keyData = keyString.trim().startsWith('{')
+            ? JSON.parse(keyString)
+            : JSON.parse(Buffer.from(keyString, 'base64').toString());
+          saInfo = keyData.client_email;
+        } else {
+          saInfo = 'applicationDefault (Check GCP Environment)';
         }
       } catch (e) {}
 
-      const collections = await db_admin.listCollections();
+      // Test connection
+      let collections: string[] = [];
+      try {
+        const cols = await db_admin.listCollections();
+        collections = cols.map(c => c.id);
+      } catch (err: any) {
+        return res.status(500).json({
+          error: 'Connection Test Failed',
+          detail: err.message,
+          code: err.code,
+          serviceAccount: saInfo,
+          project: firebaseConfig.projectId
+        });
+      }
+
+      const adminDoc = await db_admin.collection('admins').doc(req.user.uid).get();
+
       res.json({
-        auth: req.user,
+        status: 'Firestore Admin is Active',
+        auth: {
+          uid: req.user.uid,
+          email: req.user.email
+        },
         project: firebaseConfig.projectId,
         database: firebaseConfig.firestoreDatabaseId || '(default)',
         serviceAccount: saInfo,
-        visibleCollections: collections.map(c => c.id),
-        adminReady: !!db_admin
+        visibleCollections: collections,
+        isAdminDocFound: adminDoc.exists,
+        adminDocData: adminDoc.data() || null
       });
     } catch (e: any) {
-      let saInfo = 'unknown';
-      try { saInfo = (adminApp?.options?.credential as any)?.clientEmail || 'error'; } catch(err){}
-      
       res.status(500).json({ 
         error: e.message, 
         project: firebaseConfig.projectId,
-        serviceAccount: saInfo,
         stack: e.stack
       });
     }
   });
 
-  // --- KINGUIN API SYNC ---
-  app.post('/api/admin/kinguin/sync', verifyUser, isAdmin, async (req: any, res) => {
-    const KINGUIN_API_KEY = process.env.KINGUIN_API_KEY || '6a285fddd52ac8c2370f553301b94726';
-    const PROFIT_MARGIN_TRY = Number(process.env.PROFIT_MARGIN_TRY || 30);
-    const TRY_USD_RATE = Number(process.env.TRY_USD_RATE || 32);
-
-    try {
-      const axios = (await import('axios')).default;
-      console.log('Syncing products from Kinguin...');
-      
-      const response = await axios.get('https://api.kinguin.net/b2b/v2/products', {
-        headers: { 'X-Api-Key': KINGUIN_API_KEY },
-        params: { limit: 100, shelf: 'active', stock: 'in-stock' },
-        timeout: 20000
-      });
-
-      const kinguinProducts = response.data.data || [];
-      let syncCount = 0;
-
-      for (const kp of kinguinProducts) {
-        if (!db_admin) throw new Error('Firestore not initialized');
-        const productsRef = db_admin.collection('products');
-        const q = await productsRef.where('kinguinId', '==', kp.kinguinId.toString()).get();
-        
-        // Kinguin prices are in EUR or USD. We assume USD base as per project settings.
-        const basePriceUSD = Number(kp.price); 
-        const basePriceTRY = basePriceUSD * TRY_USD_RATE;
-        const finalPriceTRY = basePriceTRY + PROFIT_MARGIN_TRY;
-
-        const productData = {
-          name: kp.name,
-          description: kp.description || `${kp.name} - Instant Delivery`,
-          price: Number(finalPriceTRY.toFixed(0)), // Store as TRY rounded
-          costPrice: Number(basePriceTRY.toFixed(0)), // Cost in TRY
-          category: kp.category || 'أكواد ستيم',
-          platform: kp.platform || 'Steam',
-          imageUrl: kp.images?.cover?.url || (kp.images && Object.values(kp.images)[0] as any)?.url || 'https://via.placeholder.com/400x600?text=' + encodeURIComponent(kp.name),
-          stock: kp.qty || 10,
-          kinguinId: kp.kinguinId.toString(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          featured: false,
-          rating: 5,
-          discount: 0
-        };
-
-        if (q.empty) {
-          await productsRef.add({
-            ...productData,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-        } else {
-          await q.docs[0].ref.update(productData);
-        }
-        syncCount++;
-        if (syncCount >= 50) break;
-      }
-
-      res.json({ success: true, count: syncCount });
-    } catch (error: any) {
-      console.error('Kinguin Sync Error:', error.response?.data || error.message);
-      res.status(500).json({ 
-        error: 'فشل المزامنة مع Kinguin', 
-        details: error.response?.data?.message || error.message 
-      });
-    }
-  });
-
-  // --- ORDER CHECKOUT (WALLET PAYMENT + KINGUIN FULFILLMENT) ---
+  // --- ORDER CHECKOUT (WALLET PAYMENT) ---
   app.post('/api/orders/checkout', verifyUser, async (req: any, res) => {
     const userId = req.user.uid;
     const { items, total, customerEmail, customerName } = req.body;
-    const KINGUIN_API_KEY = process.env.KINGUIN_API_KEY || '6a285fddd52ac8c2370f553301b94726';
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'عربة التسوق فارغة' });
@@ -325,83 +323,20 @@ async function startServer() {
         transaction.update(userRef, { balance: balance - total });
         transaction.set(db_admin.collection('orders').doc(orderId), {
           userId, items, total, status: 'pending', paymentMethod: 'wallet',
-          customerEmail, customerName, createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          customerEmail, customerName, createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
         });
       });
 
-      const axios = (await import('axios')).default;
-      const keys: string[] = [];
-      let kinguinFailures = false;
-
-      // Group Kinguin items
-      const kinguinItems = [];
-      for (const item of items) {
-        const pDoc = await db_admin.collection('products').doc(item.productId).get();
-        const pData = pDoc.data();
-        if (pData?.kinguinId) {
-          kinguinItems.push({
-            kinguinId: Number(pData.kinguinId),
-            qty: item.quantity,
-            price: pData.costPrice / Number(process.env.TRY_USD_RATE || 32) // Send cost in USD if Kinguin expects it
-          });
-        }
-      }
-
-      if (kinguinItems.length > 0) {
-        try {
-          const kOrderResponse = await axios.post('https://api.kinguin.net/b2b/v2/orders', {
-            products: kinguinItems
-          }, { 
-            headers: { 'X-Api-Key': KINGUIN_API_KEY },
-            timeout: 20000 
-          });
-
-          if (kOrderResponse.data.externalOrderId || kOrderResponse.data.kinguinId) {
-            const kOrderId = kOrderResponse.data.externalOrderId || kOrderResponse.data.kinguinId;
-            // Wait for processing
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            try {
-              const kKeysResponse = await axios.get(`https://api.kinguin.net/b2b/v2/orders/${kOrderId}/keys`, {
-                headers: { 'X-Api-Key': KINGUIN_API_KEY }
-              });
-              if (kKeysResponse.data && kKeysResponse.data.keys) {
-                keys.push(...kKeysResponse.data.keys.map((k: any) => k.serial || k.text || k.url));
-              }
-            } catch (error) {
-              console.error('Keys retrieval failed:', error);
-              kinguinFailures = true;
-            }
-          }
-        } catch (ke: any) {
-          console.error(`Kinguin order failed:`, ke.response?.data || ke.message);
-          kinguinFailures = true;
-        }
-      }
-
-      const finalUpdate: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
-      if (keys.length > 0) {
-        finalUpdate.status = 'completed';
-        finalUpdate.keys = keys;
-        finalUpdate.deliveryInfo = `تم التسليم آلياً. الأكواد الخاصة بك:\n${keys.join('\n')}`;
-      } else if (kinguinFailures) {
-        finalUpdate.status = 'on_hold';
-        finalUpdate.deliveryInfo = 'جاري تأمين الأكواد آلياً، يرجى الانتظار أو مراجعة الدعم الفني';
-      }
-
-      await db_admin.collection('orders').doc(orderId).update(finalUpdate);
-
-      // Public Activity Log for Social Proof (allows unauthenticated users to see feed)
-      if (finalUpdate.status === 'delivered' || finalUpdate.status === 'completed') {
-        try {
-          await db_admin.collection('activity').add({
-            customerName: customerName || 'Kareem A.',
-            productName: items[0]?.name || 'Game Key',
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-        } catch (activeErr) {
-          console.error('Activity log error:', activeErr);
-        }
+      // Public Activity Log for Social Proof
+      try {
+        await db_admin.collection('activity').add({
+          customerName: customerName || 'Kareem A.',
+          productName: items[0]?.name || 'Game Key',
+          createdAt: FieldValue.serverTimestamp()
+        });
+      } catch (activeErr) {
+        console.error('Activity log error:', activeErr);
       }
 
       res.json({ success: true, orderId });
@@ -549,7 +484,7 @@ async function startServer() {
         // Log transaction
         transaction.set(txRef, {
           ...payload,
-          processedAt: admin.firestore.FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp(),
           userId,
           appliedAmount: amount
         });

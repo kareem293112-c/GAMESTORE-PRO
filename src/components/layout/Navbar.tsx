@@ -8,7 +8,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { auth } from '../../lib/firebase';
 import { cn, formatPrice } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { Languages } from 'lucide-react';
+import { Languages, ChevronDown, Rocket, Headphones, Ticket } from 'lucide-react';
 
 interface NavbarProps {
   onCartClick: () => void;
@@ -37,7 +37,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
 
   const handleLogout = () => auth.signOut();
 
+  const categories = [
+    { id: 'حسابات ستيم', name: 'حسابات ستيم', icon: Gamepad2 },
+    { id: 'قسم الهدايا', name: 'بطاقات هدايا', icon: Ticket },
+    { id: 'أكواد ستيم', name: 'شحن ألعاب فوري', icon: Rocket },
+    { id: 'حسابات مشكلة', name: 'اشتراكات ترفيهية', icon: Headphones },
+  ];
+
   return (
+    <>
     <nav className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -255,5 +263,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         )}
       </AnimatePresence>
     </nav>
+    <div className="bg-[#111827] border-b border-slate-800/50 hidden md:block">
+      <div className="max-w-7xl mx-auto px-4">
+        <ul className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+          {categories.map((cat) => (
+            <li key={cat.id}>
+              <Link
+                to={`/category/${encodeURIComponent(cat.id)}`}
+                className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-slate-400 hover:text-indigo-400 hover:bg-slate-800/50 transition-all rounded-xl whitespace-nowrap"
+              >
+                <cat.icon className="w-4 h-4" />
+                {cat.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    </>
   );
 };

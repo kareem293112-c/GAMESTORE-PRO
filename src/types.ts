@@ -32,7 +32,6 @@ export interface Product {
     storage?: string;
   };
   costPrice?: number;
-  kinguinId?: string;
   createdAt: string;
 }
 
@@ -47,7 +46,6 @@ export interface OrderItem {
   price: number;
   quantity: number;
   imageUrl: string;
-  kinguinId?: string;
 }
 
 export interface Order {

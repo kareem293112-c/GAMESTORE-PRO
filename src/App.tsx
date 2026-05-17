@@ -26,6 +26,7 @@ import { SupportPage } from './pages/SupportPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { OrdersPage } from './pages/OrdersPage';
+import { CategoryPage } from './pages/CategoryPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { user, profile, loading, isAdmin, isProductManager, isOrderManager } = useAuth();
@@ -89,6 +90,7 @@ const AppContent: React.FC = () => {
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/category/:categorySlug" element={<CategoryPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

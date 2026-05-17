@@ -8,7 +8,8 @@ import { useSearch } from '../context/SearchContext';
 import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Gamepad2, Gift, MousePointer2, Percent, TrendingUp, Search, X, User, Plus, ShieldCheck, Wallet } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Gamepad2, Gift, MousePointer2, Percent, TrendingUp, Search, X, User, Plus, ShieldCheck, Wallet, ChevronRight, Rocket, Headphones, Ticket } from 'lucide-react';
 import { Footer } from '../components/layout/Footer';
 import { WhatsAppButton } from '../components/ui/WhatsAppButton';
 import Masonry from 'react-masonry-css';
@@ -73,10 +74,10 @@ export const HomePage: React.FC = () => {
 
   const categories = [
     { id: 'all', name: language === 'ar' ? 'الكل' : 'All', icon: Sparkles },
-    { id: 'قسم الهدايا', name: language === 'ar' ? 'قسم الهدايا' : 'Gift Cards', icon: Gift },
-    { id: 'حسابات ستيم', name: language === 'ar' ? 'حسابات ستيم' : 'Steam Accounts', icon: User },
-    { id: 'أكواد ستيم', name: language === 'ar' ? 'أكواد تفعيل ستيم' : 'Steam Keys', icon: Gamepad2 },
-    { id: 'حسابات مشكلة', name: language === 'ar' ? 'حسابات مشكلة' : 'Subscriptions', icon: MousePointer2 },
+    { id: 'حسابات ستيم', name: language === 'ar' ? 'حسابات ستيم' : 'Steam Accounts', icon: Gamepad2 },
+    { id: 'قسم الهدايا', name: language === 'ar' ? 'بطاقات هدايا' : 'Gift Cards', icon: Ticket },
+    { id: 'أكواد ستيم', name: language === 'ar' ? 'شحن ألعاب فوري' : 'Game Top-up', icon: Rocket },
+    { id: 'حسابات مشكلة', name: language === 'ar' ? 'اشتراكات ترفيهية' : 'Subscriptions', icon: Headphones },
   ];
 
   const filteredProducts = products.filter(product => {
@@ -282,32 +283,75 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Content */}
-      <section id="products-grid" className="max-w-7xl mx-auto px-4 pb-20">
+      {/* Grid Content - Refactored to Category Rows */}
+      <section id="products-grid" className="max-w-7xl mx-auto px-4 pb-20 space-y-16">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
-            {Array(12).fill(0).map((_, i) => (
-              <div key={i} className="space-y-4">
-                <div className="aspect-[2/3] bg-slate-800/40 rounded-xl animate-pulse" />
-                <div className="h-4 bg-slate-800/40 rounded w-3/4 animate-pulse" />
+          <div className="space-y-12">
+            {[1, 2].map((i) => (
+              <div key={i} className="space-y-6">
+                <div className="h-8 bg-slate-800/40 w-48 rounded-xl animate-pulse" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
+                  {Array(6).fill(0).map((_, j) => (
+                    <div key={j} className="aspect-[3/4] bg-slate-800/40 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        ) : searchQuery ? (
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            {filteredProducts.length === 0 && (
+              <div className="py-20 text-center space-y-6">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-900 text-slate-700 border border-slate-800">
+                  <Search className="w-10 h-10" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-2xl font-black text-white">{t('products.noResults')}</p>
+                  <p className="text-slate-500">{t('products.tryAgain')}</p>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="col-span-full py-20 text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-900 text-slate-700 border border-slate-800">
-              <Search className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <p className="text-2xl font-black text-white">{t('products.noResults')}</p>
-              <p className="text-slate-500">{t('products.tryAgain')}</p>
-            </div>
+          <div className="space-y-16">
+            {categories.filter(c => c.id !== 'all').map((category) => {
+              const categoryProducts = products.filter(p => p.category === category.id);
+              if (categoryProducts.length === 0) return null;
+
+              return (
+                <div key={category.id} className="space-y-6">
+                  <div className="flex items-end justify-between border-b border-slate-800/50 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                        <category.icon className="w-5 h-5 text-indigo-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-black text-white">{category.name}</h3>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{t('banner.exclusive')}</p>
+                      </div>
+                    </div>
+                    <Link 
+                      to={`/category/${encodeURIComponent(category.id)}`}
+                      className="text-sm font-black text-indigo-400 hover:text-indigo-300 flex items-center gap-1 group transition-all"
+                    >
+                      عرض الكل
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform rtl:group-hover:-translate-x-1" />
+                    </Link>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-7">
+                    {categoryProducts.slice(0, 6).map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
