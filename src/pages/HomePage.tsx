@@ -76,7 +76,7 @@ export const HomePage: React.FC = () => {
     { id: 'all', name: language === 'ar' ? 'الكل' : 'All', icon: Sparkles },
     { id: 'حسابات ستيم', name: language === 'ar' ? 'حسابات ستيم' : 'Steam Accounts', icon: Gamepad2 },
     { id: 'قسم الهدايا', name: language === 'ar' ? 'بطاقات هدايا' : 'Gift Cards', icon: Ticket },
-    { id: 'أكواد ستيم', name: language === 'ar' ? 'مفاتيح وأكواد ألعاب رقمية' : 'Game Top-up', icon: Rocket },
+    { id: 'أكواد ستيم', name: language === 'ar' ? 'مفاتيح وأكواد ألعاب ' : 'Game Top-up', icon: Rocket },
     { id: 'حسابات مشكلة', name: language === 'ar' ? 'اشتراكات ترفيهية' : 'Subscriptions', icon: Headphones },
   ];
 
