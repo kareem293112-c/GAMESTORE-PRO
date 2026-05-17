@@ -36,78 +36,44 @@ export const CheckoutPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const orderId = `ORD-${Date.now()}`;
-
-      // Run Transaction to ensure atomic operations (stock check & balance deduction)
-      await runTransaction(db, async (transaction) => {
-        // 1. Read necessary documents
-        const userDocRef = doc(db, 'users', user!.uid);
-        const userDoc = await transaction.get(userDocRef);
-        const userData = userDoc.data();
-        
-        if (!userData) throw new Error('User not found');
-        
-        const balance = userData.balance || 0;
-        if (balance < cartTotal) {
-          throw new Error('insufficient_balance');
-        }
-
-        // 2. Check stock for each item
-        const productRefs = items.map(item => doc(db, 'products', item.id));
-        const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
-
-        for (let i = 0; i < productDocs.length; i++) {
-            const product = productDocs[i].data();
-            if (!product) throw new Error(`Product ${items[i].name} not found`);
-            if (product.stock < items[i].quantity) {
-                throw new Error(`insufficient_stock_${items[i].name}`);
-            }
-        }
-
-        // 3. Update Balance
-        transaction.update(userDocRef, {
-            balance: balance - cartTotal,
-            updatedAt: serverTimestamp()
-        });
-
-        // 4. Update Stock
-        productRefs.forEach((ref, i) => {
-           transaction.update(ref, {
-               stock: productDocs[i].data()!.stock - items[i].quantity
-           });
-        });
-
-        // 5. Create Order
-        transaction.set(doc(db, 'orders', orderId), {
-            userId: user?.uid,
-            items: items.map(item => ({
-              productId: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              imageUrl: item.imageUrl
-            })),
-            total: cartTotal,
-            status: 'pending',
-            paymentMethod: 'wallet',
-            createdAt: serverTimestamp(),
-            customerEmail: formData.email,
-            customerName: formData.name,
-        });
+      const token = await user?.getIdToken();
+      const response = await fetch('/api/orders/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            productId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            imageUrl: item.imageUrl
+          })),
+          total: cartTotal,
+          customerEmail: formData.email,
+          customerName: formData.name
+        })
       });
 
-      toast.success('تم الدفع بنجاح من المحفظة');
-      
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'فشل إتمام الطلب');
+      }
+
+      toast.success('تم إتمام الطلب بنجاح');
       clearCart();
       setSuccess(true);
     } catch (error: any) {
         if (error.message === 'insufficient_balance') {
-            toast.error('رصيدك الحالي غير كافٍ، يرجى التواصل مع الإدارة لشحن محفظتك.');
+            toast.error('رصيدك الحالي غير كافٍ، يرجى شحن محفظتك.');
         } else if (error.message.startsWith('insufficient_stock_')) {
             const productName = error.message.replace('insufficient_stock_', '');
             toast.error(`عذراً، الكمية المتوفرة من ${productName} غير كافية.`);
         } else {
-            toast.error('حدث خطأ أثناء إتمام الطلب');
+            toast.error(error.message || 'حدث خطأ أثناء إتمام الطلب');
         }
         console.error(error);
     } finally {

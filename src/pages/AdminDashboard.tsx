@@ -4,7 +4,7 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Product, Review } from '../types';
-import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter, CreditCard } from 'lucide-react';
+import { Package, Plus, Trash2, Edit2, LayoutDashboard, ShoppingBag, Users, Settings, X, Save, Filter, CreditCard, RefreshCw } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -37,6 +37,33 @@ export const AdminDashboard: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'order', name?: string } | null>(null);
   const [walletModal, setWalletModal] = useState<{ userId: string, email: string, currentBalance: number, amount: string } | null>(null);
   const [confirmInput, setConfirmInput] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync products from Kinguin
+  const handleKinguinSync = async () => {
+    setIsSyncing(true);
+    const loadingToast = toast.loading('جاري المزامنة مع Kinguin...');
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch('/api/admin/kinguin/sync', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`تمت المزامنة بنجاح! تم تحديث/إضافة ${data.count} منتجات.`, { id: loadingToast });
+        fetchProducts();
+      } else {
+        throw new Error(data.error || 'فشل المزامنة');
+      }
+    } catch (error: any) {
+      toast.error(error.message, { id: loadingToast });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Reset confirmation input when modal opens/closes
   useEffect(() => {
@@ -310,18 +337,27 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-4">
             {(isAdmin || isProductManager) && (
-              <button
-                onClick={() => {
-                  setCurrentProduct({
-                    name: '', description: '', price: 0, costPrice: 0, discount: 0, stock: 0,
-                    category: '', platform: '', imageUrl: '', rating: 5, featured: false
-                  });
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all"
-              >
-                <Plus className="w-5 h-5" /> إضافة منتج جديد
-              </button>
+              <>
+                <button
+                  onClick={handleKinguinSync}
+                  disabled={isSyncing}
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold border border-slate-700 transition-all disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} /> مزامنة Kinguin
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentProduct({
+                      name: '', description: '', price: 0, costPrice: 0, discount: 0, stock: 0,
+                      category: '', platform: '', imageUrl: '', rating: 5, featured: false
+                    });
+                    setIsModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 transition-all"
+                >
+                  <Plus className="w-5 h-5" /> إضافة منتج جديد
+                </button>
+              </>
             )}
           </div>
         </header>

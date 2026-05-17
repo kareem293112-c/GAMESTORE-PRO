@@ -32,6 +32,7 @@ export interface Product {
     storage?: string;
   };
   costPrice?: number;
+  kinguinId?: string;
   createdAt: string;
 }
 
@@ -46,6 +47,7 @@ export interface OrderItem {
   price: number;
   quantity: number;
   imageUrl: string;
+  kinguinId?: string;
 }
 
 export interface Order {
@@ -53,9 +55,10 @@ export interface Order {
   userId: string;
   items: OrderItem[];
   total: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: 'pending' | 'completed' | 'cancelled' | 'on_hold';
   paymentMethod: 'wallet';
   deliveryInfo?: string;
+  keys?: string[];
   createdAt: any; // Firestore Timestamp
   customerEmail: string;
   customerName: string;

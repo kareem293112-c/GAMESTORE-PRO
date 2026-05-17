@@ -1,6 +1,6 @@
 {
   "name": "Remix: GamersStore Pro",
-  "description": "The ultimate professional market for gamer accounts, currencies, and gift cards.",
+  "description": "The ultimate professional market for gamer accounts, currencies, and gift cards, now integrated with Kinguin for instant delivery.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API",

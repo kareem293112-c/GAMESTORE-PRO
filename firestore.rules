@@ -15,15 +15,15 @@ service cloud.firestore {
     }
     function requestTime() { return request.time; }
 
-    // Global Catch-All: Default Deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
     // --- Activity Feed ---
     match /activity/{activityId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Global Catch-All: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
     }
 
     // --- Users Collection ---

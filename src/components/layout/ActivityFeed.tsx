@@ -20,32 +20,25 @@ export const ActivityFeed: React.FC = () => {
   const { language, t } = useLanguage();
 
   useEffect(() => {
-    // 1. Fetch real completed orders from Firestore
+    // 1. Fetch real activity logs from the public 'activity' collection
     const q = query(
-      collection(db, 'orders'),
-      where('status', '==', 'completed'),
+      collection(db, 'activity'),
       orderBy('createdAt', 'desc'),
       limit(20)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // ... same logic ...
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const newActivities = snapshot.docs.map(doc => {
         const data = doc.data();
         const rawName = data.customerName || t('activity.fallbackUser');
-        const product = data.items?.[0]?.name || t('activity.fallbackProduct');
+        const product = data.productName || t('activity.fallbackProduct');
         const timestamp = data.createdAt?.toDate() || new Date();
         
-        // Filter out orders older than 30 days to keep it "fresh" and real
-        // And filter out specific unwanted patterns like mock data
-        if (timestamp < thirtyDaysAgo || 
-            rawName.includes('ABDULKERIM') || 
-            rawName.includes('Kareem') || 
-            (rawName.includes('ABN s.') && product.includes('Windows'))) {
-          return null;
-        }
+        if (timestamp < thirtyDaysAgo) return null;
 
         const nameParts = rawName.trim().split(' ');
         let maskedName = rawName;
@@ -54,29 +47,27 @@ export const ActivityFeed: React.FC = () => {
           maskedName = `${nameParts[0]} ${lastChar}.`;
         }
 
-        return {
-          id: doc.id,
-          user: maskedName,
-          product: product,
-          timestamp: timestamp
-        };
+        return { id: doc.id, user: maskedName, product: product, timestamp: timestamp };
       }).filter((activity): activity is Activity => activity !== null);
 
       setActivities(newActivities);
-      // Trigger visibility only if we have at least 3 orders
-      if (newActivities.length >= 3) {
-        setIsVisible(true);
-      }
+      if (newActivities.length >= 1) setIsVisible(true);
     }, (error) => {
-      console.error("Error fetching live activities:", error);
+      // Gracefully handle common setup errors without flooding the console
+      if (error.code === 'permission-denied') {
+        process.env.NODE_ENV === 'development' && console.log("ActivityFeed: Permissions denied (check Firestore setup or rules).");
+      } else {
+        console.warn("ActivityFeed error:", error.message);
+      }
+      setIsVisible(false);
     });
 
     return () => unsubscribe();
   }, [t]);
 
   useEffect(() => {
-    // Hide if fewer than 3 real orders to prevent "empty" look
-    if (activities.length < 3) {
+    // Hide if no activities
+    if (activities.length < 1) {
       setIsVisible(false);
       return;
     }
@@ -115,7 +106,7 @@ export const ActivityFeed: React.FC = () => {
     }
   };
 
-  if (activities.length < 3) return null;
+  if (activities.length < 1) return null;
 
   const current = activities[currentIndex];
 
