@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const categories = [
     { id: 'حسابات ستيم', name: 'حسابات ستيم', icon: Gamepad2 },
     { id: 'قسم الهدايا', name: 'بطاقات هدايا', icon: Ticket },
-    { id: 'أكواد ستيم', name: 'شحن ألعاب فوري', icon: Rocket },
+    { id: 'أكواد ستيم', name: 'مفاتيح وأكواد ألعاب', icon: Rocket },
     { id: 'حسابات مشكلة', name: 'اشتراكات ترفيهية', icon: Headphones },
   ];
 
@@ -270,7 +270,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
             <li key={cat.id}>
               <Link
                 to={`/category/${encodeURIComponent(cat.id)}`}
-                className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-slate-400 hover:text-indigo-400 hover:bg-slate-800/50 transition-all rounded-xl whitespace-nowrap"
+                className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-slate-400 hover:text-[#ff6000] hover:bg-slate-800/30 transition-all rounded-xl whitespace-nowrap border-b-2 border-transparent hover:border-[#ff6000]/30"
               >
                 <cat.icon className="w-4 h-4" />
                 {cat.name}

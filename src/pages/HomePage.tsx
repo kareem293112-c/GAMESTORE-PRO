@@ -76,7 +76,7 @@ export const HomePage: React.FC = () => {
     { id: 'all', name: language === 'ar' ? 'الكل' : 'All', icon: Sparkles },
     { id: 'حسابات ستيم', name: language === 'ar' ? 'حسابات ستيم' : 'Steam Accounts', icon: Gamepad2 },
     { id: 'قسم الهدايا', name: language === 'ar' ? 'بطاقات هدايا' : 'Gift Cards', icon: Ticket },
-    { id: 'أكواد ستيم', name: language === 'ar' ? 'مفاتيح وأكواد ألعاب ' : 'Game Top-up', icon: Rocket },
+    { id: 'أكواد ستيم', name: language === 'ar' ? 'مفاتيح وأكواد ألعاب' : 'Game Keys & Codes', icon: Rocket },
     { id: 'حسابات مشكلة', name: language === 'ar' ? 'اشتراكات ترفيهية' : 'Subscriptions', icon: Headphones },
   ];
 
@@ -325,19 +325,17 @@ export const HomePage: React.FC = () => {
 
               return (
                 <div key={category.id} className="space-y-6">
-                  <div className="flex items-end justify-between border-b border-slate-800/50 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-                        <category.icon className="w-5 h-5 text-indigo-500" />
-                      </div>
+                  <div className="flex items-end justify-between border-b border-white/5 pb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-1.5 h-8 bg-[#ff6000] rounded-full" />
                       <div>
                         <h3 className="text-xl md:text-2xl font-black text-white">{category.name}</h3>
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{t('banner.exclusive')}</p>
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5">{t('banner.exclusive')}</p>
                       </div>
                     </div>
                     <Link 
                       to={`/category/${encodeURIComponent(category.id)}`}
-                      className="text-sm font-black text-indigo-400 hover:text-indigo-300 flex items-center gap-1 group transition-all"
+                      className="text-xs font-black text-[#ff6000] hover:text-[#ff7900] flex items-center gap-1.5 group transition-all bg-[#ff6000]/5 px-4 py-2 rounded-lg border border-[#ff6000]/10"
                     >
                       عرض الكل
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform rtl:group-hover:-translate-x-1" />

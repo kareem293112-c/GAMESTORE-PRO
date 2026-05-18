@@ -75,15 +75,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Hover Actions - GameSatış Style */}
           <div className="absolute inset-0 z-20 flex items-center justify-center p-4 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-            <div className="w-full max-w-[80%] space-y-2 pointer-events-auto scale-90 group-hover:scale-100 transition-transform duration-300">
+            <div className="w-full max-w-[85%] space-y-2 pointer-events-auto scale-90 group-hover:scale-100 transition-transform duration-300">
               <button
                 onClick={(e) => isAdded ? navigate('/checkout') : handleAddToCart(e)}
                 disabled={product.stock === 0}
-                className={`w-full py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-2xl backdrop-blur-md ${
+                className={`w-full py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-2xl shadow-orange-500/20 ${
                   product.stock > 0
                     ? isAdded 
                       ? 'bg-emerald-500 text-white'
-                      : 'bg-white/90 text-slate-900 hover:bg-white hover:scale-105'
+                      : 'bg-[#ff6000] text-white hover:bg-[#ff7900] hover:scale-105 active:scale-95'
                     : 'bg-slate-800/80 text-slate-500 cursor-not-allowed'
                 }`}
               >
